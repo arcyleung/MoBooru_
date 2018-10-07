@@ -21,6 +21,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
@@ -51,6 +52,7 @@ import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.CompoundButton;
 import android.widget.NumberPicker;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -82,12 +84,14 @@ import java.util.Set;
 
 public class Main extends AppCompatActivity {
 
+    // Core config
     final String appName = "MoBooru";
     final String verString = "1.3";
-    public ArrayList<Data> datas = new ArrayList<>();
     int pageSize = 30;
+    int current_page = 1;
     String mainsite = "https://redditbooru.com";
     URL url1;
+
     Display display;
     int screenWidth = 0;
     int screenHeight = 0;
@@ -105,21 +109,13 @@ public class Main extends AppCompatActivity {
     public static final int MIN_COLUMNS_PORTRAIT = 1;
     public static final int MIN_COLUMNS_LANDSCAPE = 2;
 
-    FloatingActionButton close;
-    FloatingActionButton actions;
-    FloatingActionButton fab;
-    FloatingActionButton fab1;
-    FloatingActionButton fab2;
-    FloatingActionButton fab3;
-    FloatingActionButton fab4;
+    DisplayMetrics displayMetrics = new DisplayMetrics();
 
-    boolean isFABOpen;
 
-    // DEFAULT SETTINGS
+    // Site config
     String selectedString = "";
     boolean showNsfw;
     String selectedURL = "https://redditbooru.com/images/?sources=" + selectedString + "&afterDate=";
-    long lastTime;
     Document doc;
     Elements redditSubs;
 
@@ -127,39 +123,47 @@ public class Main extends AppCompatActivity {
     JSONArray arr;
     LoadJSONasyncInit runner;
     JSONArray jsonObjs;
+    ArrayList<Data> datas = new ArrayList<>();
     ArrayList<Data> tmp;
     LoadMorePhotos lm;
-    int current_page = 1;
+
     Boolean loadingMore = true;
-    private StaggeredGridView sgv;
+
     private DataAdapter adapter;
-    DisplayMetrics displayMetrics = new DisplayMetrics();
+
+
+    // UI, Views, Layout
+    ProgressBar progressBar;
+    ProgressDialog progressDialog;
+    Toolbar toolbar;
+
+    FloatingActionButton close;
+    FloatingActionButton actions;
+    FloatingActionButton fab, fab1, fab2, fab3, fab4;
+    boolean isFABOpen;
 
     NavigationView navigationView;
+    StaggeredGridView staggeredGridView;
+
     DrawerLayout drawerLayout;
-
-    ProgressDialog mProgressDialog;
-
     AppBarLayout appBarLayout;
+    SwipeRefreshLayout swipeContainer;
+    Handler progressHandler = new Handler();
 
-    private Toolbar mToolbar;
 
-    // Refactor to use simple list
+    // Sharedprefs, serialization, storage
     HashMap<Integer, Sub> subsList = new HashMap<>();
     HashSet<Integer> selectedSubs = new HashSet<>();
-    @Deprecated
+    long lastIndexTime;
     boolean timeToUpdate = true;
     Gson gson = new Gson();
-    Type intSubMap = new TypeToken<Map<Integer, Sub>>() {
-    }.getType();
+    Type intSubMap = new TypeToken<Map<Integer, Sub>>(){}.getType();
     Type intSet = new TypeToken<Set<Integer>>(){}.getType();
-
     SharedPreferences prefs;
     SharedPreferences.Editor prefsEditor;
 
-    File filepath = Environment.getExternalStorageDirectory();
+    File externalStorageDirectory = Environment.getExternalStorageDirectory();
 
-    private SwipeRefreshLayout swipeContainer;
 
     private static Point getDisplaySize(final Display display) {
         final Point point = new Point();
@@ -181,18 +185,20 @@ public class Main extends AppCompatActivity {
 
         navigationView = (NavigationView) findViewById(R.id.navigationView);
         drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        progressBar = (ProgressBar) findViewById(R.id.horizontal_progress_bar);
 
-        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
         appBarLayout = (AppBarLayout) findViewById(R.id.appBar);
-        setSupportActionBar(mToolbar);
-        mToolbar.setNavigationIcon(R.drawable.ic_launcher);
-        mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
+        setSupportActionBar(toolbar);
+        toolbar.setNavigationIcon(R.drawable.ic_launcher);
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 //                System.out.println("Clicked navigation");
                 drawerLayout.openDrawer(GravityCompat.START);
             }
         });
+
 
         getSupportActionBar().setDisplayShowHomeEnabled(true);
 
@@ -205,7 +211,7 @@ public class Main extends AppCompatActivity {
             subsList = gson.fromJson(prefs.getString("SUBS", "{1: {subName: 'Awwnime', subID: 1, subscriberCount: 0, selected: true, isNSFW: false, desc: ''}}"), intSubMap);
             selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[1]"), intSet);
             showNsfw = prefs.getBoolean("SHOW_NSFW", false);
-            mToolbar.setVisibility(!prefs.getBoolean("FULLSCREEN", false) == true ? View.VISIBLE : View.GONE);
+            toolbar.setVisibility(!prefs.getBoolean("FULLSCREEN", false) == true ? View.VISIBLE : View.GONE);
 
             // Fullscreen to false by default
             if (!prefs.contains("FULLSCREEN")) {
@@ -377,9 +383,9 @@ public class Main extends AppCompatActivity {
         // Set icon click listener
         setOnClickListener();
 
-        ViewCompat.setNestedScrollingEnabled(sgv, true);
+        ViewCompat.setNestedScrollingEnabled(staggeredGridView, true);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            sgv.setNestedScrollingEnabled(true);
+            staggeredGridView.setNestedScrollingEnabled(true);
         }
     }
 
@@ -390,9 +396,9 @@ public class Main extends AppCompatActivity {
             tmp = addToArry(jsonObjs);
             adapter = new DataAdapter(this, R.layout.staggered, tmp, showNsfw);
             setTitle(Html.fromHtml("<font color='#ffffff'>" + appName + "</font>"));
-            sgv = (StaggeredGridView) findViewById(R.id.gridView);
-            sgv.setAdapter(adapter);
-            sgv.setOnScrollListener(new EndlessScrollListener() {
+            staggeredGridView = (StaggeredGridView) findViewById(R.id.gridView);
+            staggeredGridView.setAdapter(adapter);
+            staggeredGridView.setOnScrollListener(new EndlessScrollListener() {
                 @Override
                 public void onLoadMore(int page, int totalItemsCount) {
                     lm = new LoadMorePhotos();
@@ -401,7 +407,7 @@ public class Main extends AppCompatActivity {
             });
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 //                System.out.println("Enabling nested scrolling");
-                sgv.setNestedScrollingEnabled(true);
+                staggeredGridView.setNestedScrollingEnabled(true);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -419,7 +425,7 @@ public class Main extends AppCompatActivity {
     }
 
     public void setOnClickListener() {
-        sgv.setOnItemClickListener(new StaggeredGridView.OnItemClickListener() {
+        staggeredGridView.setOnItemClickListener(new StaggeredGridView.OnItemClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
@@ -429,7 +435,7 @@ public class Main extends AppCompatActivity {
                 final Data selected = datas.get(position);
                 final InteractiveImageView zoomImageView = new InteractiveImageView(getActivity());
                 isFABOpen = false;
-                mProgressDialog = ProgressDialog.show(getActivity(), "Downloading", "...", true);
+                progressDialog = ProgressDialog.show(getActivity(), "Downloading", "...", true);
 
                 new Thread() {
                     @Override
@@ -507,7 +513,7 @@ public class Main extends AppCompatActivity {
 
                                                         public void onClick(DialogInterface dialog, int whichButton) {
 
-                                                            mProgressDialog = ProgressDialog.show(getActivity(), "Setting Wallpaper", "...", true);
+                                                            progressDialog = ProgressDialog.show(getActivity(), "Setting Wallpaper", "...", true);
 
                                                             new Thread() {
                                                                 @Override
@@ -516,7 +522,7 @@ public class Main extends AppCompatActivity {
                                                                     Looper.prepare();
                                                                     try {
                                                                         wallMan.setBitmap(finalImg);
-                                                                        mProgressDialog.dismiss();
+                                                                        progressDialog.dismiss();
 
                                                                         Main.this.runOnUiThread(new Runnable() {
                                                                             public void run() {
@@ -527,7 +533,7 @@ public class Main extends AppCompatActivity {
                                                                         });
 
                                                                     } catch (Exception e) {
-                                                                        mProgressDialog.dismiss();
+                                                                        progressDialog.dismiss();
                                                                         Main.this.runOnUiThread(new Runnable() {
                                                                             public void run() {
                                                                                 Toast.makeText(getApplicationContext(),
@@ -555,7 +561,7 @@ public class Main extends AppCompatActivity {
                                             bitmap = finalImg;
 
                                             // Create a new folder AndroidBegin in SD Card
-                                            File dir = new File(filepath.getAbsolutePath() + "/MoBooru/");
+                                            File dir = new File(externalStorageDirectory.getAbsolutePath() + "/MoBooru/");
                                             dir.mkdirs();
 
                                             // Create a name for the saved image
@@ -668,7 +674,7 @@ public class Main extends AppCompatActivity {
                                             }
                                         }
                                     });
-                                    mProgressDialog.dismiss();
+                                    progressDialog.dismiss();
                                 }
                             });
                         } catch (final Exception ex) {
@@ -738,41 +744,6 @@ public class Main extends AppCompatActivity {
 
     // Rebuild index with new sub metadata
     public void updateSubsList() {
-
-        for (Sub s: subsList.values()){
-            String info;
-            JSONObject obj;
-            try {
-                String aboutURL = "https://www.reddit.com/" + s.subName + "/about.json";
-                URL url = new URL(aboutURL);
-                Scanner scan = new Scanner(url.openStream());
-                info = "";
-                while (scan.hasNext())
-                    info += scan.nextLine();
-                scan.close();
-                obj = new JSONObject(info).getJSONObject("data");
-                subsList.put(
-                        s.subID,
-                        new Sub(
-                                s.subName,
-                                s.subID,
-                                obj.getInt("subscribers"),
-                                s.selected,
-                                obj.getBoolean("over18"),
-                                obj.getString("public_description")
-                        )
-                );
-                String serial = gson.toJson(subsList, intSubMap);
-                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-                SharedPreferences.Editor prefsEditor = prefs.edit();
-                prefsEditor.putString("SUBS", serial);
-                prefsEditor.apply();
-            } catch (Exception ex){
-//                ex.printStackTrace();
-                subsList.put(s.subID, new Sub(s.subName, s.subID, 0, s.selected, false, ""));
-            }
-        }
-//        System.out.println(subsList.toString());
 
     }
 
@@ -860,7 +831,7 @@ public class Main extends AppCompatActivity {
                         data.series = ja.getJSONObject(i).getString("title").replaceAll("^[^\\[]*", "");
 //                        data.ogSrc = ja.getJSONObject(i).getString("sourceUrl");
                         if (i == pageSize - 1) {
-                            lastTime = Long.parseLong(ja.getJSONObject(i).getString("dateCreated"));
+                            lastIndexTime = Long.parseLong(ja.getJSONObject(i).getString("dateCreated"));
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -876,6 +847,64 @@ public class Main extends AppCompatActivity {
             }
         }
         return datas;
+    }
+
+    private class UpdateIndex extends AsyncTask<Void, Integer, Void> {
+        int prog = 0;
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            for (Sub s: subsList.values()){
+                String info;
+                JSONObject obj;
+                try {
+                    String aboutURL = "https://www.reddit.com/" + s.subName + "/about.json";
+                    URL url = new URL(aboutURL);
+                    Scanner scan = new Scanner(url.openStream());
+                    info = "";
+                    while (scan.hasNext())
+                        info += scan.nextLine();
+                    scan.close();
+                    obj = new JSONObject(info).getJSONObject("data");
+                    subsList.put(
+                            s.subID,
+                            new Sub(
+                                    s.subName,
+                                    s.subID,
+                                    obj.getInt("subscribers"),
+                                    s.selected,
+                                    obj.getBoolean("over18"),
+                                    obj.getString("public_description")
+                            )
+                    );
+                    String serial = gson.toJson(subsList, intSubMap);
+                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+                    SharedPreferences.Editor prefsEditor = prefs.edit();
+                    prefsEditor.putString("SUBS", serial);
+                    prefsEditor.apply();
+                } catch (Exception ex){
+//                ex.printStackTrace();
+                    subsList.put(s.subID, new Sub(s.subName, s.subID, 0, s.selected, false, ""));
+                }
+                System.out.println(Math.ceil(prog*1.0/subsList.values().size()*100));
+                publishProgress((int) Math.ceil(prog*1.0/subsList.values().size()*100));
+                prog++;
+            }
+//        System.out.println(subsList.toString());
+            return null;
+        }
+        @Override
+        protected void onPostExecute(Void result) {
+            progressBar.setVisibility(View.GONE);
+        }
+
+        protected void onPreExecute() {
+        }
+
+        protected void onProgressUpdate(Integer... values) {
+            progressBar.setProgress(values[0]);
+        }
     }
 
     private class DownloadImage extends AsyncTask<String, Void, Bitmap> {
@@ -942,12 +971,37 @@ public class Main extends AppCompatActivity {
                     for (int j = 0; j < arr.length(); j++) {
                         subsList.put(arr.getJSONObject(j).getInt("value"), new Sub(arr.getJSONObject(j).getString("name"), arr.getJSONObject(j).getInt("value")));
                     }
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            updateSubsList();
-                        }
-                    }.start();
+
+                    new UpdateIndex().execute();
+
+//                    new Thread() {
+//                        @Override
+//                        public void run() {
+//
+//                            updateSubsList();
+//                            progressBar.setVisibility(View.GONE);
+//                        }
+//                    }.start();
+//
+//                    new Thread(new Runnable() {
+//                        public void run() {
+//                            int progressStatusCounter = 0;
+//                            while (progressStatusCounter < 100) {
+//                                progressStatusCounter += 2;
+//                                final int finalProgressStatusCounter = progressStatusCounter;
+//                                progressHandler.post(new Runnable() {
+//                                    public void run() {
+//                                        progressBar.setProgress(finalProgressStatusCounter);
+//                                    }
+//                                });
+//                                try {
+//                                    Thread.sleep(300);
+//                                } catch (InterruptedException e) {
+//                                    e.printStackTrace();
+//                                }
+//                            }
+//                        }
+//                    }).start();
                 }
 
 
@@ -959,7 +1013,7 @@ public class Main extends AppCompatActivity {
 
             try {
                 selectedURL = "https://redditbooru.com/images/?sources=" + selectedString + "&afterDate=";
-                url1 = new URL(selectedURL + lastTime);
+                url1 = new URL(selectedURL + lastIndexTime);
 
                 Scanner scan = new Scanner(url1.openStream());
                 while (scan.hasNext())
@@ -995,7 +1049,7 @@ public class Main extends AppCompatActivity {
             try {
                 // refactor into string scanner
                 selectedURL = "https://redditbooru.com/images/?sources=" + selectedString + "&afterDate=";
-                url1 = new URL(selectedURL + lastTime);
+                url1 = new URL(selectedURL + lastIndexTime);
 
                 Scanner scan = new Scanner(url1.openStream());
                 String str = "";
@@ -1015,7 +1069,7 @@ public class Main extends AppCompatActivity {
         protected void onPostExecute(Void result) {
 
             // get listview current position - used to maintain scroll position
-//            int currentPosition = sgv.getFirstVisiblePosition();
+//            int currentPosition = staggeredGridView.getFirstVisiblePosition();
 
             // APPEND NEW DATA TO THE ARRAYLIST AND SET THE ADAPTER TO THE
             // LISTVIEW

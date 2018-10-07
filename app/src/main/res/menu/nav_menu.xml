@@ -21,7 +21,10 @@
             android:id="@+id/fullscreen_toggle"
             android:title="Fullscreen"
             app:actionLayout="@layout/switch_item" />
-
+        <item
+            android:id="@+id/title_toggle"
+            android:title="Show Titles"
+            app:actionLayout="@layout/switch_item" />
         <item android:id="@+id/columns"
             android:title="Columns"/>
     </group>
