@@ -1,5 +1,6 @@
 package com.absoluteapps.arthurl.mobooru;
 
+import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -49,6 +50,8 @@ import android.view.Surface;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.Transformation;
 import android.widget.AdapterView;
 import android.widget.CompoundButton;
 import android.widget.NumberPicker;
@@ -134,6 +137,7 @@ public class Main extends AppCompatActivity {
 
     // UI, Views, Layout
     ProgressBar progressBar;
+    final int progressBarScale = 100;
     ProgressDialog progressDialog;
     Toolbar toolbar;
 
@@ -148,8 +152,6 @@ public class Main extends AppCompatActivity {
     DrawerLayout drawerLayout;
     AppBarLayout appBarLayout;
     SwipeRefreshLayout swipeContainer;
-    Handler progressHandler = new Handler();
-
 
     // Sharedprefs, serialization, storage
     HashMap<Integer, Sub> subsList = new HashMap<>();
@@ -186,6 +188,8 @@ public class Main extends AppCompatActivity {
         navigationView = (NavigationView) findViewById(R.id.navigationView);
         drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         progressBar = (ProgressBar) findViewById(R.id.horizontal_progress_bar);
+        progressBar.setMax(100*progressBarScale);
+        progressBar.setVisibility(View.GONE);
 
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         appBarLayout = (AppBarLayout) findViewById(R.id.appBar);
@@ -194,7 +198,6 @@ public class Main extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                System.out.println("Clicked navigation");
                 drawerLayout.openDrawer(GravityCompat.START);
             }
         });
@@ -223,17 +226,21 @@ public class Main extends AppCompatActivity {
             }
 
             // Time to reindex subs
-            if (!prefs.contains("UPDATE_TIME") || System.currentTimeMillis() - prefs.getLong("UPDATE_TIME", 0) > 604800000 ){
+            if (timeToUpdate || !prefs.contains("UPDATE_TIME") || System.currentTimeMillis() - prefs.getLong("UPDATE_TIME", 0) > 604800000 ){
                 prefsEditor.putLong("UPDATE_TIME", System.currentTimeMillis());
                 prefsEditor.apply();
                 timeToUpdate = true;
-                System.out.println("[DBG] == timeToUpdate");
+                Toast.makeText(getApplicationContext(),
+                        "Updating index...",
+                        Toast.LENGTH_LONG).show();
             }
 
         } catch (Exception ex) {
-            System.out.println("[DBG] == TRACE");
             ex.printStackTrace();
             timeToUpdate = true;
+            Toast.makeText(getApplicationContext(),
+                    "Updating index...",
+                    Toast.LENGTH_LONG).show();
         }
 
         setFavoriteSubs();
@@ -268,7 +275,6 @@ public class Main extends AppCompatActivity {
                                                               }
                                                           }
                                                       }
-
                                 )
                                 .create();
 
@@ -406,7 +412,6 @@ public class Main extends AppCompatActivity {
                 }
             });
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-//                System.out.println("Enabling nested scrolling");
                 staggeredGridView.setNestedScrollingEnabled(true);
             }
         } catch (Exception e) {
@@ -887,11 +892,9 @@ public class Main extends AppCompatActivity {
 //                ex.printStackTrace();
                     subsList.put(s.subID, new Sub(s.subName, s.subID, 0, s.selected, false, ""));
                 }
-                System.out.println(Math.ceil(prog*1.0/subsList.values().size()*100));
-                publishProgress((int) Math.ceil(prog*1.0/subsList.values().size()*100));
+                publishProgress((int) Math.ceil(prog*1.0/subsList.values().size()*100*progressBarScale));
                 prog++;
             }
-//        System.out.println(subsList.toString());
             return null;
         }
         @Override
@@ -900,11 +903,45 @@ public class Main extends AppCompatActivity {
         }
 
         protected void onPreExecute() {
+//            progressBar.setIndeterminate(false);
+            progressBar.setVisibility(View.VISIBLE);
         }
 
         protected void onProgressUpdate(Integer... values) {
-            progressBar.setProgress(values[0]);
+            ProgressBarAnimation anim = new ProgressBarAnimation(progressBar, progressBar.getProgress(), values[0]);
+            anim.setDuration(1000);
+            progressBar.startAnimation(anim);
+//            progressBar.setProgress(values[0]);
         }
+    }
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB) // API 11
+    public static <T> void executeAsyncTask(AsyncTask<T, ?, ?> asyncTask, T... params) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+            asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, params);
+        else
+            asyncTask.execute(params);
+    }
+
+    public class ProgressBarAnimation extends Animation {
+        private ProgressBar progressBar;
+        private float from;
+        private float  to;
+
+        public ProgressBarAnimation(ProgressBar progressBar, float from, float to) {
+            super();
+            this.progressBar = progressBar;
+            this.from = from;
+            this.to = to;
+        }
+
+        @Override
+        protected void applyTransformation(float interpolatedTime, Transformation t) {
+            super.applyTransformation(interpolatedTime, t);
+            float value = from + (to - from) * interpolatedTime;
+            progressBar.setProgress((int) value);
+        }
+
     }
 
     private class DownloadImage extends AsyncTask<String, Void, Bitmap> {
@@ -968,11 +1005,11 @@ public class Main extends AppCompatActivity {
                 arr = new JSONArray(subsJSON);
 
                 if (timeToUpdate || arr.length() > subsList.size()) {
+                    System.out.println("updating index");
                     for (int j = 0; j < arr.length(); j++) {
                         subsList.put(arr.getJSONObject(j).getInt("value"), new Sub(arr.getJSONObject(j).getString("name"), arr.getJSONObject(j).getInt("value")));
                     }
-
-                    new UpdateIndex().execute();
+                    executeAsyncTask(new UpdateIndex());
 
 //                    new Thread() {
 //                        @Override
@@ -1065,6 +1102,11 @@ public class Main extends AppCompatActivity {
             return null;
         }
 
+        protected void onPreExecute() {
+            progressBar.setIndeterminate(true);
+            progressBar.setVisibility(View.VISIBLE);
+        }
+
         @Override
         protected void onPostExecute(Void result) {
 
@@ -1081,6 +1123,7 @@ public class Main extends AppCompatActivity {
             // SET LOADINGMORE "FALSE" AFTER ADDING NEW FEEDS TO THE EXISTING
             // LIST
             loadingMore = false;
+            progressBar.setVisibility(View.GONE);
         }
     }
 }
