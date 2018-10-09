@@ -1,13 +1,18 @@
 package com.absoluteapps.arthurl.mobooru;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.view.ContextThemeWrapper;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
+import android.text.Html;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -19,9 +24,9 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.support.v7.widget.Toolbar;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -43,8 +48,10 @@ public class SubSelector extends AppCompatActivity {
     CustomAdapter adp = null;
     Gson gson = new Gson();
     Button mClearText;
+    ImageButton mInfo;
     EditText mEditText;
-    Type hashSetMap = new TypeToken<HashSet<Integer>>(){}.getType();
+    Type hashSetMap = new TypeToken<HashSet<Integer>>() {
+    }.getType();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +59,7 @@ public class SubSelector extends AppCompatActivity {
         setContentView(R.layout.activity_settings_subs);
         mEditText = (EditText) findViewById(R.id.search);
         mClearText = (Button) findViewById(R.id.clearText);
+        mInfo = (ImageButton) findViewById(R.id.info);
 
         //initially clear button is invisible
         mClearText.setVisibility(View.INVISIBLE);
@@ -71,11 +79,30 @@ public class SubSelector extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if(s.length() != 0) {
+                if (s.length() != 0) {
                     mClearText.setVisibility(View.VISIBLE);
                 } else {
-                    mClearText.setVisibility(View.GONE);
+                    mClearText.setVisibility(View.INVISIBLE);
                 }
+            }
+        });
+
+        // Info button
+        mInfo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final AlertDialog d1 = new AlertDialog.Builder(new ContextThemeWrapper(SubSelector.this, R.style.AppTheme))
+                        .setTitle("Tips")
+                        .setNegativeButton("Back", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // do nothing
+                            }
+                        })
+                        .setIcon(android.R.drawable.ic_menu_info_details)
+                        .setMessage("Check the subreddits you'd like to see pictures from; press and hold each subreddit to see its description!")
+                        .create();
+
+                d1.show();
             }
         });
 
@@ -85,41 +112,24 @@ public class SubSelector extends AppCompatActivity {
 
         // Checked favorite subs <sub_id, checked>
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-
-//        if (prefs.getString("SELECTED_SUBS", "["+R.string.defaultsub+"]").equals("["+R.string.defaultsub+"]")){
-//
-//            // Set selectedString sub to awwnime only
-////            selectedSubs = new HashMap<Integer, Boolean>();
-////            for (int i = 0; i < subsList.size(); i++){
-////                favoriteSubs.put(subsList.get(i).subID, false);
-////            }
-//            selectedSubs.add(1);
-//        } else {
-            try {
-                selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "["+R.string.defaultsub+"]"), hashSetMap);
-                for (int id: selectedSubs){
-                        subsMap.get(id).selected = true;
-                }
+        try {
+            selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[" + R.string.defaultsub + "]"), hashSetMap);
+            for (int id : selectedSubs) {
+                subsMap.get(id).selected = true;
             }
-            catch (Exception ex){
-                System.out.println("[DBG] failed deserialize " +ex);
-                System.out.println(gson.toJson(subsList));
-                // Set selectedString sub to awwnime only
-                selectedSubs = new HashSet<Integer>();
-//                for (int i = 0; i < subsList.size(); i++){
-//                    favoriteSubs.put(subsList.get(i).subID, false);
-//                }
-                selectedSubs.add(1);
-            }
-            subsList = new ArrayList<>(subsMap.values());
-//        }
+        } catch (Exception ex) {
+            // Set selectedString sub to awwnime only
+            selectedSubs = new HashSet<Integer>();
+            selectedSubs.add(1);
+        }
+        subsList = new ArrayList<>(subsMap.values());
         displayList();
         buttonPressed();
     }
 
     public void clear(View view) {
         mEditText.setText("");
-        mClearText.setVisibility(View.GONE);
+        mClearText.setVisibility(View.INVISIBLE);
     }
 
     @Override
@@ -204,16 +214,14 @@ public class SubSelector extends AppCompatActivity {
         });
 
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            public void onItemClick(AdapterView<?> parent, View view, int p, long id) {
-                Sub sub = (Sub) parent.getItemAtPosition(p);
-                ((Sub) parent.getItemAtPosition(p)).selected = !((Sub) parent.getItemAtPosition(p)).selected;
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Sub sub = (Sub) parent.getItemAtPosition(position);
+                ((Sub) parent.getItemAtPosition(position)).selected = !((Sub) parent.getItemAtPosition(position)).selected;
                 CheckBox cb = (CheckBox) view.findViewById(R.id.checkBox);
                 boolean isSelected = selectedSubs.contains(sub.subID);
                 if (isSelected) {
-                    System.out.println("[DBG] removing " +sub.subID);
                     selectedSubs.remove(sub.subID);
                 } else {
-                    System.out.println("[DBG] adding " +sub.subID);
                     selectedSubs.add(sub.subID);
                 }
                 cb.setChecked(!isSelected);
@@ -222,80 +230,34 @@ public class SubSelector extends AppCompatActivity {
                 adp.notifyDataSetChanged();
             }
         });
+
+        lv.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                Sub sub = (Sub) parent.getItemAtPosition(position);
+                final AlertDialog d1 = new AlertDialog.Builder(new ContextThemeWrapper(SubSelector.this, R.style.AppTheme))
+                        .setTitle("About " + sub.subName + ":")
+                        .setNegativeButton("Back", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // do nothing
+                            }
+                        })
+                        .setMessage(sub.desc)
+                        .create();
+
+                d1.show();
+                return true;
+            }
+        });
     }
 
-    private class CustomAdapter extends ArrayAdapter<Sub> {
-
-        private ArrayList<Sub> subsList;
-
-        public CustomAdapter(Context context, int textViewResourceId, ArrayList<Sub> subsList) {
-            super(context, textViewResourceId, subsList);
-            this.subsList = subsList;
-        }
-
-        private class ViewHolder {
-            CheckBox name;
-            TextView isNSFW;
-            TextView subscribers;
-        }
-
-        @Override
-        public View getView(final int position, View convertView, ViewGroup parent) {
-
-            ViewHolder holder = null;
-
-            if (convertView == null) {
-                LayoutInflater vi = (LayoutInflater)getSystemService(
-                        Context.LAYOUT_INFLATER_SERVICE);
-                convertView = vi.inflate(R.layout.activity_settings_subs_checkboxes, parent, false);
-
-                holder = new ViewHolder();
-                holder.name = (CheckBox) convertView.findViewById(R.id.checkBox);
-                holder.isNSFW = (TextView) convertView.findViewById(R.id.isNSFW);
-                holder.subscribers = (TextView) convertView.findViewById(R.id.subscribers);
-                convertView.setTag(holder);
-            }
-            else {
-                holder = (ViewHolder) convertView.getTag();
-            }
-
-            Sub sb = subsList.get(position);
-
-            holder.name.setText(sb.subName);
-            holder.name.setChecked(selectedSubs.contains(sb.subID));
-            holder.name.setTag(sb);
-            holder.isNSFW.setText(sb.isNSFW ? "NSFW" : "");
-            holder.subscribers.setText(thousandsFormatter(sb.subscriberCount));
-            return convertView;
-        }
-
-        // Filter Class
-        public void filter(String charText) {
-            charText = charText.toLowerCase(Locale.getDefault());
-            subsList.clear();
-            if (charText.length() == 0) {
-                subsList.addAll(origList);
-            }
-            else
-            {
-                for (Sub s : origList)
-                {
-                    if (s.subName.contains(charText))
-                    {
-                        subsList.add(s);
-                    }
-                }
-            }
-            notifyDataSetChanged();
-        }
-    }
-
-    public String thousandsFormatter(int value){
-        if (value < 1000){
-            return value+" ";
+    public String thousandsFormatter(int value) {
+        if (value < 1000) {
+            return value + " ";
         }
         int scale = (int) Math.pow(10, 1);
-        return Math.round(value/100 ) / (1.0*10) +"k ";
+        return Math.round(value / 100) / (1.0 * 10) + "k ";
     }
 
     private void buttonPressed() {
@@ -329,7 +291,67 @@ public class SubSelector extends AppCompatActivity {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         SharedPreferences.Editor prefsEditor = prefs.edit();
         prefsEditor.putString("SELECTED_SUBS", serial);
-        System.out.println("[DBG] saving " +serial);
         prefsEditor.apply();
+    }
+
+    private class CustomAdapter extends ArrayAdapter<Sub> {
+
+        private ArrayList<Sub> subsList;
+
+        public CustomAdapter(Context context, int textViewResourceId, ArrayList<Sub> subsList) {
+            super(context, textViewResourceId, subsList);
+            this.subsList = subsList;
+        }
+
+        @Override
+        public View getView(final int position, View convertView, ViewGroup parent) {
+
+            ViewHolder holder = null;
+
+            if (convertView == null) {
+                LayoutInflater vi = (LayoutInflater) getSystemService(
+                        Context.LAYOUT_INFLATER_SERVICE);
+                convertView = vi.inflate(R.layout.activity_settings_subs_checkboxes, parent, false);
+
+                holder = new ViewHolder();
+                holder.name = (CheckBox) convertView.findViewById(R.id.checkBox);
+                holder.isNSFW = (TextView) convertView.findViewById(R.id.isNSFW);
+                holder.subscribers = (TextView) convertView.findViewById(R.id.subscribers);
+                convertView.setTag(holder);
+            } else {
+                holder = (ViewHolder) convertView.getTag();
+            }
+
+            Sub sb = subsList.get(position);
+
+            holder.name.setText(sb.subName);
+            holder.name.setChecked(selectedSubs.contains(sb.subID));
+            holder.name.setTag(sb);
+            holder.isNSFW.setText(sb.isNSFW ? "NSFW" : "");
+            holder.subscribers.setText(thousandsFormatter(sb.subscriberCount));
+            return convertView;
+        }
+
+        // Filter Class
+        public void filter(String charText) {
+            charText = charText.toLowerCase(Locale.getDefault());
+            subsList.clear();
+            if (charText.length() == 0) {
+                subsList.addAll(origList);
+            } else {
+                for (Sub s : origList) {
+                    if (s.subName.contains(charText)) {
+                        subsList.add(s);
+                    }
+                }
+            }
+            notifyDataSetChanged();
+        }
+
+        private class ViewHolder {
+            CheckBox name;
+            TextView isNSFW;
+            TextView subscribers;
+        }
     }
 }

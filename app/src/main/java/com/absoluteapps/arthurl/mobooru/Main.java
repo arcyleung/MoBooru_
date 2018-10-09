@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
@@ -22,7 +23,6 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
@@ -31,10 +31,11 @@ import android.support.annotation.RequiresApi;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
@@ -75,6 +76,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.ArrayList;
@@ -87,85 +89,78 @@ import java.util.Set;
 
 public class Main extends AppCompatActivity {
 
-    // Core config
-    final String appName = "MoBooru";
-    final String verString = "1.3";
-    int pageSize = 30;
-    int current_page = 1;
-    String mainsite = "https://redditbooru.com";
-    URL url1;
-
-    Display display;
-    int screenWidth = 0;
-    int screenHeight = 0;
-    int bitmapWidth = 0;
-    int bitmapHeight = 0;
-
     public static final int MAX_BITMAP_SIZE = 100 * 1024 * 1024; // 100 MB
-    public static final int THUMBNAIL_SIZE = 300;
-
     public static final int DEFAULT_COLUMNS_PORTRAIT = 2;
     public static final int DEFAULT_COLUMNS_LANDSCAPE = 3;
-
     public static final int MAX_COLUMNS_PORTRAIT = 6;
     public static final int MAX_COLUMNS_LANDSCAPE = 6;
     public static final int MIN_COLUMNS_PORTRAIT = 1;
     public static final int MIN_COLUMNS_LANDSCAPE = 2;
 
+    // Core config
+    final String appName = "MoBooru";
+    final String verString = "1.3";
+    final int progressBarScale = 100;
+    int thumbnail_size = 300;
+    int pageSize = 30;
+    int current_page = 1;
+    String mainsite = "https://redditbooru.com";
+    URL url1;
+    Display display;
+    int screenWidth = 0;
+    int screenHeight = 0;
+    int bitmapWidth = 0;
+    int bitmapHeight = 0;
     DisplayMetrics displayMetrics = new DisplayMetrics();
-
 
     // Site config
     String selectedString = "";
     boolean showNsfw;
+    boolean showTitles;
     String selectedURL = "https://redditbooru.com/images/?sources=" + selectedString + "&afterDate=";
     Document doc;
     Elements redditSubs;
-
     String subsJSON = "";
     JSONArray arr;
     LoadJSONasyncInit runner;
     JSONArray jsonObjs;
     ArrayList<Data> datas = new ArrayList<>();
+    ArrayList<Data> favorites = new ArrayList<>();
     ArrayList<Data> tmp;
     LoadMorePhotos lm;
-
-    Boolean loadingMore = true;
-
-    private DataAdapter adapter;
-
+    boolean loadingMore = true;
+    boolean viewingFavorites;
 
     // UI, Views, Layout
-    ProgressBar progressBar;
-    final int progressBarScale = 100;
+    ProgressBar inDetProgressBar;
+    ProgressBar detProgressBar;
     ProgressDialog progressDialog;
     Toolbar toolbar;
-
     FloatingActionButton close;
     FloatingActionButton actions;
-    FloatingActionButton fab, fab1, fab2, fab3, fab4;
+    FloatingActionButton fab, fab1, fab2, fab3, fab4, fab5;
     boolean isFABOpen;
-
     NavigationView navigationView;
     StaggeredGridView staggeredGridView;
-
     DrawerLayout drawerLayout;
     AppBarLayout appBarLayout;
     SwipeRefreshLayout swipeContainer;
-
     // Sharedprefs, serialization, storage
     HashMap<Integer, Sub> subsList = new HashMap<>();
     HashSet<Integer> selectedSubs = new HashSet<>();
     long lastIndexTime;
-    boolean timeToUpdate = true;
+    boolean timeToUpdate = false;
     Gson gson = new Gson();
-    Type intSubMap = new TypeToken<Map<Integer, Sub>>(){}.getType();
-    Type intSet = new TypeToken<Set<Integer>>(){}.getType();
+    Type intSubMap = new TypeToken<Map<Integer, Sub>>() {
+    }.getType();
+    Type intSet = new TypeToken<Set<Integer>>() {
+    }.getType();
+    Type dataList = new TypeToken<ArrayList<Data>>() {
+    }.getType();
     SharedPreferences prefs;
     SharedPreferences.Editor prefsEditor;
-
     File externalStorageDirectory = Environment.getExternalStorageDirectory();
-
+    private DataAdapter adapter;
 
     private static Point getDisplaySize(final Display display) {
         final Point point = new Point();
@@ -178,29 +173,65 @@ public class Main extends AppCompatActivity {
         return point;
     }
 
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB) // API 11
+    public static <T> void executeAsyncTask(AsyncTask<T, ?, ?> asyncTask, T... params) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+            asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, params);
+        else
+            asyncTask.execute(params);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setTheme(R.style.AppTheme);
         setContentView(R.layout.activity_main);
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
 
         navigationView = (NavigationView) findViewById(R.id.navigationView);
         drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        progressBar = (ProgressBar) findViewById(R.id.horizontal_progress_bar);
-        progressBar.setMax(100*progressBarScale);
-        progressBar.setVisibility(View.GONE);
+        detProgressBar = (ProgressBar) findViewById(R.id.determinate_progress_bar);
+        detProgressBar.setMax(100 * progressBarScale);
+        detProgressBar.setVisibility(View.GONE);
+
+        inDetProgressBar = (ProgressBar) findViewById(R.id.indeterminate_progress_bar);
+        inDetProgressBar.setVisibility(View.GONE);
 
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         appBarLayout = (AppBarLayout) findViewById(R.id.appBar);
+        ActionBarDrawerToggle mDrawerToggle;
         setSupportActionBar(toolbar);
-        toolbar.setNavigationIcon(R.drawable.ic_launcher);
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                drawerLayout.openDrawer(GravityCompat.START);
-            }
-        });
+        final ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null)
+        {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            mDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
+            {
+
+                public void onDrawerClosed(View view)
+                {
+                    supportInvalidateOptionsMenu();
+                    //drawerOpened = false;
+                }
+
+                public void onDrawerOpened(View drawerView)
+                {
+                    supportInvalidateOptionsMenu();
+                    //drawerOpened = true;
+                }
+            };
+            mDrawerToggle.setDrawerIndicatorEnabled(true);
+            drawerLayout.setDrawerListener(mDrawerToggle);
+            mDrawerToggle.syncState();
+        }
+//        toolbar.setNavigationIcon(android.R.drawable.ic_menu;
+//        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                drawerLayout.openDrawer(GravityCompat.START);
+//            }
+//        });
 
 
         getSupportActionBar().setDisplayShowHomeEnabled(true);
@@ -213,8 +244,11 @@ public class Main extends AppCompatActivity {
             // Get saved subs
             subsList = gson.fromJson(prefs.getString("SUBS", "{1: {subName: 'Awwnime', subID: 1, subscriberCount: 0, selected: true, isNSFW: false, desc: ''}}"), intSubMap);
             selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[1]"), intSet);
+            favorites = gson.fromJson(prefs.getString("FAVORITES", "[]"),dataList);
             showNsfw = prefs.getBoolean("SHOW_NSFW", false);
             toolbar.setVisibility(!prefs.getBoolean("FULLSCREEN", false) == true ? View.VISIBLE : View.GONE);
+            showTitles = prefs.getBoolean("SHOW_TITLES", true);
+            thumbnail_size = prefs.getInt("THUMBNAIL_SIZE", 300);
 
             // Fullscreen to false by default
             if (!prefs.contains("FULLSCREEN")) {
@@ -225,37 +259,63 @@ public class Main extends AppCompatActivity {
                 immersiveFullscreen();
             }
 
-            // Time to reindex subs
-            if (timeToUpdate || !prefs.contains("UPDATE_TIME") || System.currentTimeMillis() - prefs.getLong("UPDATE_TIME", 0) > 604800000 ){
-                prefsEditor.putLong("UPDATE_TIME", System.currentTimeMillis());
+            // Show titles to true by default
+            if (!prefs.contains("SHOW_TITLES")) {
+                prefsEditor.putBoolean("SHOW_TITLES", true);
                 prefsEditor.apply();
+            }
+
+            // Thumbnail size is 300 by default
+            if (!prefs.contains("THUMBNAIL_SIZE")) {
+                prefsEditor.putInt("THUMBNAIL_SIZE", 300);
+                prefsEditor.apply();
+            }
+
+            // Time to reindex subs
+            if (!prefs.contains("UPDATE_TIME") || System.currentTimeMillis() - prefs.getLong("UPDATE_TIME", 0) > 604800000) {
                 timeToUpdate = true;
-                Toast.makeText(getApplicationContext(),
-                        "Updating index...",
-                        Toast.LENGTH_LONG).show();
             }
 
         } catch (Exception ex) {
             ex.printStackTrace();
             timeToUpdate = true;
-            Toast.makeText(getApplicationContext(),
-                    "Updating index...",
-                    Toast.LENGTH_LONG).show();
         }
 
+        viewingFavorites = getIntent().getSerializableExtra("viewingFavorites") == null ? false : (boolean) getIntent().getSerializableExtra("viewingFavorites");
         setFavoriteSubs();
 
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                Intent intent;
                 switch (item.getItemId()) {
-
                     case R.id.nav_subs:
-                        startActivity(new Intent(Main.this, SubSelector.class).putExtra("subsList", subsList));
-                        finish();
+                        if (!timeToUpdate) {
+                            startActivity(new Intent(Main.this, SubSelector.class).putExtra("subsList", subsList));
+                            finish();
+                        } else {
+                            Toast.makeText(getApplicationContext(),
+                                    "Please wait until indexing finishes...",
+                                    Toast.LENGTH_LONG).show();
+                        }
                         return true;
 //                        drawerLayout.closeDrawers();
+
+                    case R.id.nav_favorites:
+                        intent = getIntent();
+                        intent.putExtra("viewingFavorites", true);
+                        finish();
+                        startActivity(intent);
+                        return true;
+
+                    case R.id.nav_back:
+                        intent = getIntent();
+                        intent.putExtra("viewingFavorites", false);
+                        finish();
+                        startActivity(intent);
+                        return true;
+
                     case R.id.nav_about:
                         final AlertDialog d1 = new AlertDialog.Builder(Main.this)
                                 .setTitle("About")
@@ -313,7 +373,12 @@ public class Main extends AppCompatActivity {
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 if (rotation == Surface.ROTATION_0) {
                                     prefsEditor.putInt("COLUMNS_PORTRAIT", numberPicker.getValue());
+                                    if (numberPicker.getValue() == 1)
+                                        prefsEditor.putInt("THUMBNAIL_SIZE", 600);
+                                    else
+                                        prefsEditor.putInt("THUMBNAIL_SIZE", 300);
                                 } else {
+                                    prefsEditor.putInt("THUMBNAIL_SIZE", 300);
                                     prefsEditor.putInt("COLUMNS_LANDSCAPE", numberPicker.getValue());
                                 }
                                 prefsEditor.apply();
@@ -393,14 +458,32 @@ public class Main extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             staggeredGridView.setNestedScrollingEnabled(true);
         }
+
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
+        if (timeToUpdate) {
+            Toast.makeText(getApplicationContext(),
+                    "Updating subreddit index...",
+                    Toast.LENGTH_LONG).show();
+        }
     }
 
     public void initializeAdapter() {
         try {
-            jsonObjs = new JSONArray();
-            jsonObjs = runner.execute(jsonObjs).get();
-            tmp = addToArry(jsonObjs);
-            adapter = new DataAdapter(this, R.layout.staggered, tmp, showNsfw);
+            if (viewingFavorites == false) {
+                jsonObjs = new JSONArray();
+                jsonObjs = runner.execute(jsonObjs).get();
+                tmp = addToArry(jsonObjs);
+            } else {
+                tmp = gson.fromJson(prefs.getString("FAVORITES", "[]"), dataList);
+            }
+
+            if (tmp.size() == 0 && viewingFavorites){
+                Toast.makeText(getApplicationContext(),
+                        "You have not added any favorites yet",
+                        Toast.LENGTH_LONG).show();
+            }
+
+            adapter = new DataAdapter(this, R.layout.staggered, tmp, showNsfw, showTitles);
             setTitle(Html.fromHtml("<font color='#ffffff'>" + appName + "</font>"));
             staggeredGridView = (StaggeredGridView) findViewById(R.id.gridView);
             staggeredGridView.setAdapter(adapter);
@@ -415,6 +498,7 @@ public class Main extends AppCompatActivity {
                 staggeredGridView.setNestedScrollingEnabled(true);
             }
         } catch (Exception e) {
+            System.out.println("CRASHED");
             e.printStackTrace();
         }
     }
@@ -488,6 +572,7 @@ public class Main extends AppCompatActivity {
                                     dialog.getWindow().setLayout(screenWidth, screenHeight);
                                     dialog.getWindow().setDimAmount(.9f);
                                     dialog.show();
+                                    immersiveFullscreen();
 
                                     close = (FloatingActionButton) dialog.findViewById(R.id.imageClose);
                                     fab = (FloatingActionButton) dialog.findViewById(R.id.fab);
@@ -495,6 +580,17 @@ public class Main extends AppCompatActivity {
                                     fab2 = (FloatingActionButton) dialog.findViewById(R.id.fab2);
                                     fab3 = (FloatingActionButton) dialog.findViewById(R.id.fab3);
                                     fab4 = (FloatingActionButton) dialog.findViewById(R.id.fab4);
+                                    fab5 = (FloatingActionButton) dialog.findViewById(R.id.fab5);
+
+                                    if (display.getRotation() == Surface.ROTATION_0) {
+                                        // Vertical
+                                        float portTranslate = displayMetrics.heightPixels * 0.09f;
+                                        fab5.animate().translationX(-portTranslate);
+                                    } else {
+                                        // Horizontal
+                                        float landTranslate = displayMetrics.heightPixels * 0.15f;
+                                        fab5.animate().translationX(-landTranslate);
+                                    }
 
                                     fab.setOnClickListener(new View.OnClickListener() {
                                         @Override
@@ -669,6 +765,21 @@ public class Main extends AppCompatActivity {
                                         }
                                     });
 
+                                    fab5.setOnClickListener(new View.OnClickListener() {
+                                        public void onClick(View view) {
+                                            try {
+                                                favorites.add(selected);
+                                                String serial = gson.toJson(favorites, dataList);
+                                                prefsEditor.putString("FAVORITES", serial);
+                                                prefsEditor.apply();
+                                                System.out.println(serial);
+                                            } catch (Exception e) {
+                                                // TODO Auto-generated catch block
+                                                e.printStackTrace();
+                                            }
+                                        }
+                                    });
+
                                     close.setOnClickListener(new View.OnClickListener() {
                                         @Override
                                         public void onClick(View v) {
@@ -700,8 +811,6 @@ public class Main extends AppCompatActivity {
     private void showFABMenu() {
         fab.animate().rotation(45);
         isFABOpen = true;
-
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
 
         if (display.getRotation() == Surface.ROTATION_0) {
             // Vertical
@@ -748,10 +857,6 @@ public class Main extends AppCompatActivity {
     }
 
     // Rebuild index with new sub metadata
-    public void updateSubsList() {
-
-    }
-
     //
     public void setFavoriteSubs() {
         selectedString = "";
@@ -776,10 +881,17 @@ public class Main extends AppCompatActivity {
         if (((RelativeLayout) (navigationView.findViewById(R.id.nsfw_toggle)) == null)) {
             finish();
         }
+
+        ((RelativeLayout) (findViewById(R.id.nav_subs))).getChildAt(0).setVisibility(viewingFavorites ? View.GONE : View.VISIBLE);
+        ((RelativeLayout) (findViewById(R.id.nav_favorites))).getChildAt(0).setVisibility(viewingFavorites ? View.GONE : View.VISIBLE);
+        ((RelativeLayout) (findViewById(R.id.nav_back))).getChildAt(0).setVisibility(viewingFavorites ? View.VISIBLE : View.GONE);
+
         SwitchCompat nsfwToggle = (SwitchCompat) ((RelativeLayout) (navigationView.findViewById(R.id.nsfw_toggle))).getChildAt(0);
         SwitchCompat fullScreenToggle = (SwitchCompat) ((RelativeLayout) (navigationView.findViewById(R.id.fullscreen_toggle))).getChildAt(0);
+        SwitchCompat titlesToggle = (SwitchCompat) ((RelativeLayout) (navigationView.findViewById(R.id.title_toggle))).getChildAt(0);
         nsfwToggle.setChecked(prefs.getBoolean("SHOW_NSFW", false));
         fullScreenToggle.setChecked(prefs.getBoolean("FULLSCREEN", false));
+        titlesToggle.setChecked(prefs.getBoolean("SHOW_TITLES", true));
 
         nsfwToggle.setOnClickListener(new CompoundButton.OnClickListener() {
             @Override
@@ -797,6 +909,18 @@ public class Main extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 prefsEditor.putBoolean("FULLSCREEN", !prefs.getBoolean("FULLSCREEN", false));
+                prefsEditor.apply();
+                Intent intent = getIntent();
+                finish();
+                overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
+                startActivity(intent);
+                overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
+            }
+        });
+        titlesToggle.setOnClickListener(new CompoundButton.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                prefsEditor.putBoolean("SHOW_TITLES", !prefs.getBoolean("SHOW_TITLES", true));
                 prefsEditor.apply();
                 Intent intent = getIntent();
                 finish();
@@ -825,15 +949,15 @@ public class Main extends AppCompatActivity {
                         data.imgUrl = ja.getJSONObject(i).getString("cdnUrl");
                         data.width = ja.getJSONObject(i).getInt("width");
                         data.height = ja.getJSONObject(i).getInt("height");
-                        data.rat = 1.0*data.height/ data.width;
-                        data.thumbImgUrl = ja.getJSONObject(i).getString("thumb") + "_"+THUMBNAIL_SIZE+"_"+THUMBNAIL_SIZE+".jpg";
+                        data.rat = 1.0 * data.height / data.width;
+                        data.thumbImgUrl = ja.getJSONObject(i).getString("thumb") + "_" + thumbnail_size + "_" + thumbnail_size + ".jpg";
 
                         // Metadata
                         data.score = ja.getJSONObject(i).getString("score");
                         data.nsfw = ja.getJSONObject(i).getBoolean("nsfw");
                         data.redditSrc = ja.getJSONObject(i).getString("externalId");
-                        data.title = ja.getJSONObject(i).getString("title").replaceAll("\\s*\\[.+?\\]\\s*", ""); //+"\n("+data.score+"\uD83D\uDD3A)";
-                        data.series = ja.getJSONObject(i).getString("title").replaceAll("^[^\\[]*", "");
+                        data.title = ja.getJSONObject(i).getString("title").replaceAll("\\s*\\[.+?\\]\\s*", "").replace("&amp;", "&"); //+"\n("+data.score+"\uD83D\uDD3A)";
+                        data.series = ja.getJSONObject(i).getString("title").replaceAll("^[^\\[]*", "").replace("&amp;", "&");
 //                        data.ogSrc = ja.getJSONObject(i).getString("sourceUrl");
                         if (i == pageSize - 1) {
                             lastIndexTime = Long.parseLong(ja.getJSONObject(i).getString("dateCreated"));
@@ -860,7 +984,7 @@ public class Main extends AppCompatActivity {
         @Override
         protected Void doInBackground(Void... params) {
 
-            for (Sub s: subsList.values()){
+            for (Sub s : subsList.values()) {
                 String info;
                 JSONObject obj;
                 try {
@@ -884,49 +1008,41 @@ public class Main extends AppCompatActivity {
                             )
                     );
                     String serial = gson.toJson(subsList, intSubMap);
-                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-                    SharedPreferences.Editor prefsEditor = prefs.edit();
                     prefsEditor.putString("SUBS", serial);
                     prefsEditor.apply();
-                } catch (Exception ex){
+                } catch (Exception ex) {
 //                ex.printStackTrace();
                     subsList.put(s.subID, new Sub(s.subName, s.subID, 0, s.selected, false, ""));
                 }
-                publishProgress((int) Math.ceil(prog*1.0/subsList.values().size()*100*progressBarScale));
+                publishProgress((int) Math.ceil(prog * 1.0 / subsList.values().size() * 100 * progressBarScale));
                 prog++;
             }
             return null;
         }
+
         @Override
         protected void onPostExecute(Void result) {
-            progressBar.setVisibility(View.GONE);
+            prefsEditor.putLong("UPDATE_TIME", System.currentTimeMillis());
+            prefsEditor.apply();
+            detProgressBar.setVisibility(View.GONE);
+            timeToUpdate = false;
         }
 
         protected void onPreExecute() {
-//            progressBar.setIndeterminate(false);
-            progressBar.setVisibility(View.VISIBLE);
+            detProgressBar.setVisibility(View.VISIBLE);
         }
 
         protected void onProgressUpdate(Integer... values) {
-            ProgressBarAnimation anim = new ProgressBarAnimation(progressBar, progressBar.getProgress(), values[0]);
+            ProgressBarAnimation anim = new ProgressBarAnimation(detProgressBar, detProgressBar.getProgress(), values[0]);
             anim.setDuration(1000);
-            progressBar.startAnimation(anim);
-//            progressBar.setProgress(values[0]);
+            detProgressBar.startAnimation(anim);
         }
-    }
-
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB) // API 11
-    public static <T> void executeAsyncTask(AsyncTask<T, ?, ?> asyncTask, T... params) {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-            asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, params);
-        else
-            asyncTask.execute(params);
     }
 
     public class ProgressBarAnimation extends Animation {
         private ProgressBar progressBar;
         private float from;
-        private float  to;
+        private float to;
 
         public ProgressBarAnimation(ProgressBar progressBar, float from, float to) {
             super();
@@ -1005,7 +1121,6 @@ public class Main extends AppCompatActivity {
                 arr = new JSONArray(subsJSON);
 
                 if (timeToUpdate || arr.length() > subsList.size()) {
-                    System.out.println("updating index");
                     for (int j = 0; j < arr.length(); j++) {
                         subsList.put(arr.getJSONObject(j).getInt("value"), new Sub(arr.getJSONObject(j).getString("name"), arr.getJSONObject(j).getInt("value")));
                     }
@@ -1016,7 +1131,7 @@ public class Main extends AppCompatActivity {
 //                        public void run() {
 //
 //                            updateSubsList();
-//                            progressBar.setVisibility(View.GONE);
+//                            detProgressBar.setVisibility(View.GONE);
 //                        }
 //                    }.start();
 //
@@ -1028,7 +1143,7 @@ public class Main extends AppCompatActivity {
 //                                final int finalProgressStatusCounter = progressStatusCounter;
 //                                progressHandler.post(new Runnable() {
 //                                    public void run() {
-//                                        progressBar.setProgress(finalProgressStatusCounter);
+//                                        detProgressBar.setProgress(finalProgressStatusCounter);
 //                                    }
 //                                });
 //                                try {
@@ -1103,8 +1218,7 @@ public class Main extends AppCompatActivity {
         }
 
         protected void onPreExecute() {
-            progressBar.setIndeterminate(true);
-            progressBar.setVisibility(View.VISIBLE);
+            inDetProgressBar.setVisibility(View.VISIBLE);
         }
 
         @Override
@@ -1123,7 +1237,7 @@ public class Main extends AppCompatActivity {
             // SET LOADINGMORE "FALSE" AFTER ADDING NEW FEEDS TO THE EXISTING
             // LIST
             loadingMore = false;
-            progressBar.setVisibility(View.GONE);
+            inDetProgressBar.setVisibility(View.GONE);
         }
     }
 }

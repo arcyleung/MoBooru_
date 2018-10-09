@@ -79,7 +79,8 @@ public class StaggeredGridView extends ExtendableListView {
         double heightRatio;
         boolean isHeaderFooter;
 
-        GridItemRecord() { }
+        GridItemRecord() {
+        }
 
         /**
          * Constructor called from {@link #CREATOR}
@@ -168,8 +169,7 @@ public class StaggeredGridView extends ExtendableListView {
             if (mColumnCount > 0) {
                 mColumnCountPortrait = mColumnCount;
                 mColumnCountLandscape = mColumnCount;
-            }
-            else {
+            } else {
                 mColumnCountPortrait = prefs.getInt("COLUMNS_PORTRAIT", 2);
                 mColumnCountLandscape = prefs.getInt("COLUMNS_LANDSCAPE", 3);
             }
@@ -223,25 +223,25 @@ public class StaggeredGridView extends ExtendableListView {
         mGridPaddingRight = right;
         mGridPaddingBottom = bottom;
     }
-    
+
     public void setColumnCountPortrait(int columnCountPortrait) {
-    	mColumnCountPortrait = columnCountPortrait;
-    	onSizeChanged(getWidth(), getHeight());
-    	requestLayoutChildren();
+        mColumnCountPortrait = columnCountPortrait;
+        onSizeChanged(getWidth(), getHeight());
+        requestLayoutChildren();
     }
-    
+
     public void setColumnCountLandscape(int columnCountLandscape) {
-    	mColumnCountLandscape = columnCountLandscape;
-    	onSizeChanged(getWidth(), getHeight());
-    	requestLayoutChildren();
+        mColumnCountLandscape = columnCountLandscape;
+        onSizeChanged(getWidth(), getHeight());
+        requestLayoutChildren();
     }
-    
+
     public void setColumnCount(int columnCount) {
-    	mColumnCountPortrait = columnCount;
-    	mColumnCountLandscape = columnCount;
+        mColumnCountPortrait = columnCount;
+        mColumnCountLandscape = columnCount;
         // mColumnCount set onSizeChanged();
-    	onSizeChanged(getWidth(), getHeight());
-    	requestLayoutChildren();
+        onSizeChanged(getWidth(), getHeight());
+        requestLayoutChildren();
     }
 
     // //////////////////////////////////////////////////////////////////////////////////////////
@@ -290,8 +290,7 @@ public class StaggeredGridView extends ExtendableListView {
                 viewType == ITEM_VIEW_TYPE_IGNORE) {
             // for headers and weird ignored views
             super.onMeasureChild(child, layoutParams);
-        }
-        else {
+        } else {
             if (DBG) Log.d(TAG, "onMeasureChild BEFORE position:" + position +
                     " h:" + getMeasuredHeight());
             // measure it to the width of our column.
@@ -299,8 +298,7 @@ public class StaggeredGridView extends ExtendableListView {
             int childHeightSpec;
             if (layoutParams.height > 0) {
                 childHeightSpec = MeasureSpec.makeMeasureSpec(layoutParams.height, MeasureSpec.EXACTLY);
-            }
-            else {
+            } else {
                 childHeightSpec = MeasureSpec.makeMeasureSpec(LayoutParams.WRAP_CONTENT, MeasureSpec.UNSPECIFIED);
             }
             child.measure(childWidthSpec, childHeightSpec);
@@ -347,13 +345,12 @@ public class StaggeredGridView extends ExtendableListView {
             final int column = getChildColumn(position, flowDown);
             setPositionColumn(position, column);
             if (DBG) Log.d(TAG, "onChildCreated position:" + position +
-                                " is in column:" + column);
-        }
-        else {
+                    " is in column:" + column);
+        } else {
             setPositionIsHeaderFooter(position);
         }
     }
-    
+
     private void requestLayoutChildren() {
         final int count = getChildCount();
         for (int i = 0; i < count; i++) {
@@ -372,8 +369,7 @@ public class StaggeredGridView extends ExtendableListView {
         // on a major re-layout reset for our next layout pass
         if (!mNeedSync) {
             Arrays.fill(mColumnBottoms, 0);
-        }
-        else {
+        } else {
             mNeedSync = false;
         }
         // copy the tops into the bottom
@@ -396,8 +392,7 @@ public class StaggeredGridView extends ExtendableListView {
                                  final int childRight, final int childBottom) {
         if (isHeaderOrFooter(position)) {
             layoutGridHeaderFooter(child, position, flowDown, childrenLeft, childTop, childRight, childBottom);
-        }
-        else {
+        } else {
             layoutGridChild(child, position, flowDown, childrenLeft, childRight);
         }
     }
@@ -411,8 +406,7 @@ public class StaggeredGridView extends ExtendableListView {
         if (flowDown) {
             gridChildTop = getLowestPositionedBottom();
             gridChildBottom = gridChildTop + getChildHeight(child);
-        }
-        else {
+        } else {
             gridChildBottom = getHighestPositionedTop();
             gridChildTop = gridChildBottom - getChildHeight(child);
         }
@@ -442,8 +436,7 @@ public class StaggeredGridView extends ExtendableListView {
         if (flowDown) {
             gridChildTop = mColumnBottoms[column]; // the next items top is the last items bottom
             gridChildBottom = gridChildTop + (getChildHeight(child) + verticalMargins);
-        }
-        else {
+        } else {
             gridChildBottom = mColumnTops[column]; // the bottom of the next column up is our top
             gridChildTop = gridChildBottom - (getChildHeight(child) + verticalMargins);
         }
@@ -476,8 +469,7 @@ public class StaggeredGridView extends ExtendableListView {
         if (isHeaderOrFooter(position)) {
 
             offsetGridHeaderFooter(child, position, flowDown, childrenLeft, childTop);
-        }
-        else {
+        } else {
             offsetGridChild(child, position, flowDown, childrenLeft, childTop);
         }
     }
@@ -491,8 +483,7 @@ public class StaggeredGridView extends ExtendableListView {
         if (flowDown) {
             gridChildTop = getLowestPositionedBottom();
             gridChildBottom = gridChildTop + getChildHeight(child);
-        }
-        else {
+        } else {
             gridChildBottom = getHighestPositionedTop();
             gridChildTop = gridChildBottom - getChildHeight(child);
         }
@@ -519,8 +510,7 @@ public class StaggeredGridView extends ExtendableListView {
         if (flowDown) {
             gridChildTop = mColumnBottoms[column]; // the next items top is the last items bottom
             gridChildBottom = gridChildTop + (getChildHeight(child) + verticalMargins);
-        }
-        else {
+        } else {
             gridChildBottom = mColumnTops[column]; // the bottom of the next column up is our top
             gridChildTop = gridChildBottom - (getChildHeight(child) + verticalMargins);
         }
@@ -563,8 +553,7 @@ public class StaggeredGridView extends ExtendableListView {
         if (childParams != null) {
             if (childParams instanceof GridLayoutParams) {
                 layoutParams = (GridLayoutParams) childParams;
-            }
-            else {
+            } else {
                 layoutParams = new GridLayoutParams(childParams);
             }
         }
@@ -592,8 +581,7 @@ public class StaggeredGridView extends ExtendableListView {
     protected int getChildLeft(final int position) {
         if (isHeaderOrFooter(position)) {
             return super.getChildLeft(position);
-        }
-        else {
+        } else {
             final int column = getPositionColumn(position);
             return mColumnLefts[column];
         }
@@ -603,8 +591,7 @@ public class StaggeredGridView extends ExtendableListView {
     protected int getChildTop(final int position) {
         if (isHeaderOrFooter(position)) {
             return super.getChildTop(position);
-        }
-        else {
+        } else {
             final int column = getPositionColumn(position);
             if (column == -1) {
                 return getHighestPositionedBottom();
@@ -621,8 +608,7 @@ public class StaggeredGridView extends ExtendableListView {
     protected int getNextChildDownsTop(final int position) {
         if (isHeaderOrFooter(position)) {
             return super.getNextChildDownsTop(position);
-        }
-        else {
+        } else {
             return getHighestPositionedBottom();
         }
     }
@@ -631,8 +617,7 @@ public class StaggeredGridView extends ExtendableListView {
     protected int getChildBottom(final int position) {
         if (isHeaderOrFooter(position)) {
             return super.getChildBottom(position);
-        }
-        else {
+        } else {
             final int column = getPositionColumn(position);
             if (column == -1) {
                 return getLowestPositionedTop();
@@ -649,8 +634,7 @@ public class StaggeredGridView extends ExtendableListView {
     protected int getNextChildUpsBottom(final int position) {
         if (isHeaderOrFooter(position)) {
             return super.getNextChildUpsBottom(position);
-        }
-        else {
+        } else {
             return getLowestPositionedTop();
         }
     }
@@ -831,8 +815,7 @@ public class StaggeredGridView extends ExtendableListView {
                     if (childBottom > mColumnBottoms[column]) {
                         mColumnBottoms[column] = childBottom + getChildBottomMargin();
                     }
-                }
-                else {
+                } else {
                     // the header and footer here
                     final int childTop = child.getTop();
                     final int childBottom = child.getBottom();
@@ -869,7 +852,7 @@ public class StaggeredGridView extends ExtendableListView {
 
     @Override
     protected void onSizeChanged(int w, int h) {
-    	super.onSizeChanged(w, h);
+        super.onSizeChanged(w, h);
         boolean isLandscape = isLandscape();
         int newColumnCount = isLandscape ? mColumnCountLandscape : mColumnCountPortrait;
         if (mColumnCount != newColumnCount) {
@@ -934,7 +917,7 @@ public class StaggeredGridView extends ExtendableListView {
         for (int pos = 0; pos < syncPosition; pos++) {
             //Check for weirdness again
             final Double heightRatio = positionHeightRatios.get(pos);
-            if(heightRatio == null){
+            if (heightRatio == null) {
                 break;
             }
 
@@ -954,8 +937,7 @@ public class StaggeredGridView extends ExtendableListView {
                     mColumnTops[i] = top;
                     mColumnBottoms[i] = bottom;
                 }
-            }
-            else {
+            } else {
                 // what's the next column down ?
                 final int column = getHighestPositionedBottomColumn();
                 // the next top is the bottom for that column
@@ -970,10 +952,10 @@ public class StaggeredGridView extends ExtendableListView {
 
 
             if (DBG) Log.d(TAG, "onColumnSync position:" + pos +
-                                " top:" + top +
-                                " bottom:" + bottom +
-                                " height:" + height +
-                                " heightRatio:" + heightRatio);
+                    " top:" + top +
+                    " bottom:" + bottom +
+                    " height:" + height +
+                    " heightRatio:" + heightRatio);
         }
 
         // our sync position will be displayed in this column
@@ -1006,11 +988,11 @@ public class StaggeredGridView extends ExtendableListView {
 
     private void setPositionHeightRatio(final int position, final int height) {
         GridItemRecord rec = getOrCreateRecord(position);
-        rec.heightRatio = (double)  height / (double) mColumnWidth;
+        rec.heightRatio = (double) height / (double) mColumnWidth;
         if (DBG) Log.d(TAG, "position:" + position +
-                            " width:" + mColumnWidth +
-                            " height:" + height +
-                            " heightRatio:" + rec.heightRatio);
+                " width:" + mColumnWidth +
+                " height:" + height +
+                " heightRatio:" + rec.heightRatio);
     }
 
     private void setPositionIsHeaderFooter(final int position) {
@@ -1054,8 +1036,7 @@ public class StaggeredGridView extends ExtendableListView {
             // column bottom
             if (flowDown) {
                 column = getHighestPositionedBottomColumn();
-            }
-            else {
+            } else {
                 column = getLowestPositionedTopColumn();
 
             }
@@ -1287,8 +1268,7 @@ public class StaggeredGridView extends ExtendableListView {
             ss.columnCount = mColumnCount;
             ss.columnTops = mColumnTops;
             ss.positionData = mPositionData;
-        }
-        else {
+        } else {
             ss.columnCount = mColumnCount >= 0 ? mColumnCount : 0;
             ss.columnTops = new int[ss.columnCount];
             ss.positionData = new SparseArray<Object>();

@@ -19,15 +19,17 @@ public class DataAdapter extends ArrayAdapter<Data> {
     int resource;
     List<Data> datas;
     Boolean showNsfw;
+    Boolean showTitles;
     Uri nsfwLogo = Uri.parse("drawable/nsfwlogo.png");
 
-    public DataAdapter(Activity activity, int resource, List<Data> objects, Boolean shwNsfw) {
+    public DataAdapter(Activity activity, int resource, List<Data> objects, Boolean showNsfw, Boolean showTitles) {
         super(activity, resource, objects);
 
         this.activity = activity;
         this.resource = resource;
         this.datas = objects;
-        this.showNsfw = shwNsfw;
+        this.showNsfw = showNsfw;
+        this.showTitles = showTitles;
     }
 
     @Override
@@ -42,8 +44,11 @@ public class DataAdapter extends ArrayAdapter<Data> {
             holder = new DealHolder();
             holder.image = (DynamicHeightImageView) row.findViewById(R.id.image);
             holder.title = (TextView) row.findViewById(R.id.title);
+            holder.title.setVisibility(showTitles ? View.VISIBLE : View.GONE);
             holder.description = (TextView) row.findViewById(R.id.description);
+            holder.description.setVisibility(showTitles ? View.VISIBLE : View.GONE);
             holder.score = (TextView) row.findViewById(R.id.score);
+            holder.score.setVisibility(showTitles ? View.VISIBLE : View.GONE);
 
             row.setTag(holder);
         } else {
