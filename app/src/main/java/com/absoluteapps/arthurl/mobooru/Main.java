@@ -1,16 +1,17 @@
 package com.absoluteapps.arthurl.mobooru;
 
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.app.WallpaperManager;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
@@ -24,6 +25,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Looper;
+import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
@@ -31,9 +33,11 @@ import android.support.annotation.RequiresApi;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -42,6 +46,7 @@ import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -76,7 +81,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.ArrayList;
@@ -85,7 +89,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
-
 
 public class Main extends AppCompatActivity {
 
@@ -99,7 +102,7 @@ public class Main extends AppCompatActivity {
 
     // Core config
     final String appName = "MoBooru";
-    final String verString = "1.3";
+    final String verString = "2.0";
     final int progressBarScale = 100;
     int thumbnail_size = 300;
     int pageSize = 30;
@@ -135,16 +138,18 @@ public class Main extends AppCompatActivity {
     ProgressBar inDetProgressBar;
     ProgressBar detProgressBar;
     ProgressDialog progressDialog;
+    Dialog dialog;
     Toolbar toolbar;
     FloatingActionButton close;
     FloatingActionButton actions;
-    FloatingActionButton fab, fab1, fab2, fab3, fab4, fab5;
+    FloatingActionButton fab, fab1, fab2, fab3, fab4, fab5, fab6;
     boolean isFABOpen;
     NavigationView navigationView;
     StaggeredGridView staggeredGridView;
     DrawerLayout drawerLayout;
     AppBarLayout appBarLayout;
     SwipeRefreshLayout swipeContainer;
+
     // Sharedprefs, serialization, storage
     HashMap<Integer, Sub> subsList = new HashMap<>();
     HashSet<Integer> selectedSubs = new HashSet<>();
@@ -161,6 +166,7 @@ public class Main extends AppCompatActivity {
     SharedPreferences.Editor prefsEditor;
     File externalStorageDirectory = Environment.getExternalStorageDirectory();
     private DataAdapter adapter;
+    Bitmap currentImg;
 
     private static Point getDisplaySize(final Display display) {
         final Point point = new Point();
@@ -197,26 +203,23 @@ public class Main extends AppCompatActivity {
 
         inDetProgressBar = (ProgressBar) findViewById(R.id.indeterminate_progress_bar);
         inDetProgressBar.setVisibility(View.GONE);
+        inDetProgressBar.setVisibility(View.GONE);
 
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         appBarLayout = (AppBarLayout) findViewById(R.id.appBar);
         ActionBarDrawerToggle mDrawerToggle;
         setSupportActionBar(toolbar);
         final ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null)
-        {
+        if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
-            mDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
-            {
+            mDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close) {
 
-                public void onDrawerClosed(View view)
-                {
+                public void onDrawerClosed(View view) {
                     supportInvalidateOptionsMenu();
                     //drawerOpened = false;
                 }
 
-                public void onDrawerOpened(View drawerView)
-                {
+                public void onDrawerOpened(View drawerView) {
                     supportInvalidateOptionsMenu();
                     //drawerOpened = true;
                 }
@@ -225,14 +228,6 @@ public class Main extends AppCompatActivity {
             drawerLayout.setDrawerListener(mDrawerToggle);
             mDrawerToggle.syncState();
         }
-//        toolbar.setNavigationIcon(android.R.drawable.ic_menu;
-//        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                drawerLayout.openDrawer(GravityCompat.START);
-//            }
-//        });
-
 
         getSupportActionBar().setDisplayShowHomeEnabled(true);
 
@@ -244,7 +239,7 @@ public class Main extends AppCompatActivity {
             // Get saved subs
             subsList = gson.fromJson(prefs.getString("SUBS", "{1: {subName: 'Awwnime', subID: 1, subscriberCount: 0, selected: true, isNSFW: false, desc: ''}}"), intSubMap);
             selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[1]"), intSet);
-            favorites = gson.fromJson(prefs.getString("FAVORITES", "[]"),dataList);
+            favorites = gson.fromJson(prefs.getString("FAVORITES", "[]"), dataList);
             showNsfw = prefs.getBoolean("SHOW_NSFW", false);
             toolbar.setVisibility(!prefs.getBoolean("FULLSCREEN", false) == true ? View.VISIBLE : View.GONE);
             showTitles = prefs.getBoolean("SHOW_TITLES", true);
@@ -303,17 +298,11 @@ public class Main extends AppCompatActivity {
 //                        drawerLayout.closeDrawers();
 
                     case R.id.nav_favorites:
-                        intent = getIntent();
-                        intent.putExtra("viewingFavorites", true);
-                        finish();
-                        startActivity(intent);
+                        restartMain(true);
                         return true;
 
                     case R.id.nav_back:
-                        intent = getIntent();
-                        intent.putExtra("viewingFavorites", false);
-                        finish();
-                        startActivity(intent);
+                        restartMain(false);
                         return true;
 
                     case R.id.nav_about:
@@ -326,7 +315,8 @@ public class Main extends AppCompatActivity {
                                 })
                                 .setIcon(R.drawable.ic_launcher)
 //                                .setMessage(Html.fromHtml(appName+" v"+verString+"<br>Author: arcyleung<br/><a href=\"http://arcyleung.com\">http://arcyleung.com</a><br/><br/><a href=\"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=NVX2XKNCSFJKG\">Donate</a> to help support development!"))
-                                .setMessage(Html.fromHtml(appName + " v" + verString + "<br>Author: arcyleung<br/><a href=\"http://arcyleung.com\">http://arcyleung.com</a><br/><br/>Please consider <a href=\"https://www.paypal.me/arcyleung\">Donating</a> to help support development! Thanks!"))
+                                .setMessage(Html.fromHtml(appName + " v" + verString + "<br>Author: arcyleung<br/><a href=\"http://arcyleung.com\">http://arcyleung.com</a><br/><br/>Follow me on <a href=\"https://twitter.com/pspkazy\">Twitter</a> or <a href=\"https://www.linkedin.com/in/arcyleung/\">LinkedIn</a>! <br/> <br/> Please direct any questions about development to <a href=\"mailto:arcyleung@gmail.com?Subject=MoBooru Inquiry\" target=\"_top\">arcyleung@gmail.com</a>\n" +
+                                        "</p> or if you want to help support development!"))
                                 .setOnDismissListener(new DialogInterface.OnDismissListener() {
                                                           @Override
                                                           public void onDismiss(DialogInterface dialogInterface) {
@@ -343,7 +333,7 @@ public class Main extends AppCompatActivity {
                         ((TextView) d1.findViewById(android.R.id.message)).setMovementMethod(LinkMovementMethod.getInstance());
                         return true;
                     case R.id.columns:
-                        final Display display = ((WindowManager) Main.this.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+                        final Display display = ((WindowManager) Main.this.getSystemService(getApplicationContext().WINDOW_SERVICE)).getDefaultDisplay();
                         final AlertDialog.Builder d2 = new AlertDialog.Builder(Main.this);
                         LayoutInflater inflater = getLayoutInflater();
                         View dialogView = inflater.inflate(R.layout.number_picker, null);
@@ -428,25 +418,28 @@ public class Main extends AppCompatActivity {
             d.show();
             return;
         }
-
         swipeContainer = (SwipeRefreshLayout) findViewById(R.id.swipe_container);
-        swipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+        if (!viewingFavorites) {
+            swipeContainer.setEnabled(true);
+            swipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
 
-            @Override
+                @Override
 
-            public void onRefresh() {
-                // Implement refresh adapter code
-                finish();
-                overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
-                startActivity(new Intent(getApplicationContext(), Main.class));
-                overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
+                public void onRefresh() {
+                    // Implement refresh adapter code
+                    finish();
+                    overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
+                    startActivity(new Intent(getApplicationContext(), Main.class));
+                    overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
 
-            }
+                }
 
-        });
+            });
 
-        swipeContainer.setColorSchemeResources(
-                android.R.color.holo_red_light);
+            swipeContainer.setColorSchemeResources(android.R.color.holo_red_light);
+        } else {
+            swipeContainer.setEnabled(false);
+        }
 
         // Image grid adapter
         initializeAdapter();
@@ -459,12 +452,16 @@ public class Main extends AppCompatActivity {
             staggeredGridView.setNestedScrollingEnabled(true);
         }
 
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
         if (timeToUpdate) {
             Toast.makeText(getApplicationContext(),
                     "Updating subreddit index...",
                     Toast.LENGTH_LONG).show();
         }
+
+        Main.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
+
+        StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+        StrictMode.setVmPolicy(builder.build());
     }
 
     public void initializeAdapter() {
@@ -475,25 +472,54 @@ public class Main extends AppCompatActivity {
                 tmp = addToArry(jsonObjs);
             } else {
                 tmp = gson.fromJson(prefs.getString("FAVORITES", "[]"), dataList);
+                datas = tmp;
             }
 
-            if (tmp.size() == 0 && viewingFavorites){
-                Toast.makeText(getApplicationContext(),
-                        "You have not added any favorites yet",
-                        Toast.LENGTH_LONG).show();
+            if (tmp.size() == 0 && viewingFavorites) {
+                final AlertDialog d1;
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    d1 = new AlertDialog.Builder(Main.this)
+                            .setTitle("Favorites")
+                            .setNegativeButton("Back", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    // do nothing
+                                }
+                            })
+                            .setMessage("You have not added any favorites yet. To add a favorite, press the heart button when viewing an image!")
+                            .setOnDismissListener(new DialogInterface.OnDismissListener() {
+                                                      @Override
+                                                      public void onDismiss(DialogInterface dialogInterface) {
+                                                          restartMain(false);
+                                                      }
+                                                  }
+                            )
+                            .create();
+
+                    d1.show();
+                } else {
+                    Toast.makeText(getApplicationContext(),
+                            "You have not added any favorites yet.",
+                            Toast.LENGTH_LONG).show();
+                }
             }
 
             adapter = new DataAdapter(this, R.layout.staggered, tmp, showNsfw, showTitles);
-            setTitle(Html.fromHtml("<font color='#ffffff'>" + appName + "</font>"));
+            setTitle(Html.fromHtml("<font color='#ffffff'>" + (viewingFavorites ? "Favorites" : appName) + "</font>"));
             staggeredGridView = (StaggeredGridView) findViewById(R.id.gridView);
             staggeredGridView.setAdapter(adapter);
-            staggeredGridView.setOnScrollListener(new EndlessScrollListener() {
-                @Override
-                public void onLoadMore(int page, int totalItemsCount) {
-                    lm = new LoadMorePhotos();
-                    lm.execute();
-                }
-            });
+
+            if (viewingFavorites == false) {
+                staggeredGridView.setOnScrollListener(new EndlessScrollListener() {
+                    @Override
+                    public void onLoadMore(int page, int totalItemsCount) {
+                        lm = new LoadMorePhotos();
+                        lm.execute();
+                    }
+                });
+            } else {
+                adapter.datas = datas;
+                adapter.notifyDataSetChanged();
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 staggeredGridView.setNestedScrollingEnabled(true);
             }
@@ -501,6 +527,24 @@ public class Main extends AppCompatActivity {
             System.out.println("CRASHED");
             e.printStackTrace();
         }
+    }
+
+    @Override
+    protected void onPause() {
+        if (dialog != null)
+            dialog.dismiss();
+        if (progressDialog != null)
+            progressDialog.dismiss();
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (dialog != null)
+            dialog.dismiss();
+        if (progressDialog != null)
+            progressDialog.dismiss();
+        super.onDestroy();
     }
 
     public void immersiveFullscreen() {
@@ -517,14 +561,13 @@ public class Main extends AppCompatActivity {
         staggeredGridView.setOnItemClickListener(new StaggeredGridView.OnItemClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
             @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
-
-                final Dialog dialog = new Dialog(getActivity());
+            public void onItemClick(AdapterView<?> adapterView, final View view, final int position, long id) {
+                dialog = new Dialog(Main.this);
                 dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
                 final Data selected = datas.get(position);
-                final InteractiveImageView zoomImageView = new InteractiveImageView(getActivity());
+                final InteractiveImageView zoomImageView = new InteractiveImageView(Main.this);
                 isFABOpen = false;
-                progressDialog = ProgressDialog.show(getActivity(), "Downloading", "...", true);
+                progressDialog = ProgressDialog.show(Main.this, "Downloading", "...", true);
 
                 new Thread() {
                     @Override
@@ -581,16 +624,37 @@ public class Main extends AppCompatActivity {
                                     fab3 = (FloatingActionButton) dialog.findViewById(R.id.fab3);
                                     fab4 = (FloatingActionButton) dialog.findViewById(R.id.fab4);
                                     fab5 = (FloatingActionButton) dialog.findViewById(R.id.fab5);
+                                    fab6 = (FloatingActionButton) dialog.findViewById(R.id.fab6);
 
-                                    if (display.getRotation() == Surface.ROTATION_0) {
-                                        // Vertical
-                                        float portTranslate = displayMetrics.heightPixels * 0.09f;
-                                        fab5.animate().translationX(-portTranslate);
+                                    boolean favorited = gson.toJson(favorites, dataList).contains(gson.toJson(selected));
+
+                                    if (favorited) {
+                                        // Is in favorites
+                                        fab5.hide();
+                                        fab6.show();
+                                        if (display.getRotation() == Surface.ROTATION_0) {
+                                            // Vertical
+                                            float portTranslate = displayMetrics.heightPixels * 0.09f;
+                                            fab6.animate().translationX(-portTranslate);
+                                        } else {
+                                            // Horizontal
+                                            float landTranslate = displayMetrics.heightPixels * 0.15f;
+                                            fab6.animate().translationX(-landTranslate);
+                                        }
                                     } else {
-                                        // Horizontal
-                                        float landTranslate = displayMetrics.heightPixels * 0.15f;
-                                        fab5.animate().translationX(-landTranslate);
+                                        fab5.show();
+                                        fab6.hide();
+                                        if (display.getRotation() == Surface.ROTATION_0) {
+                                            // Vertical
+                                            float portTranslate = displayMetrics.heightPixels * 0.09f;
+                                            fab5.animate().translationX(-portTranslate);
+                                        } else {
+                                            // Horizontal
+                                            float landTranslate = displayMetrics.heightPixels * 0.15f;
+                                            fab5.animate().translationX(-landTranslate);
+                                        }
                                     }
+
 
                                     fab.setOnClickListener(new View.OnClickListener() {
                                         @Override
@@ -614,7 +678,7 @@ public class Main extends AppCompatActivity {
 
                                                         public void onClick(DialogInterface dialog, int whichButton) {
 
-                                                            progressDialog = ProgressDialog.show(getActivity(), "Setting Wallpaper", "...", true);
+                                                            progressDialog = ProgressDialog.show(Main.this, "Setting Wallpaper", "...", true);
 
                                                             new Thread() {
                                                                 @Override
@@ -655,95 +719,34 @@ public class Main extends AppCompatActivity {
 
                                     fab2.setOnClickListener(new View.OnClickListener() {
                                         public void onClick(View view) {
-                                            Bitmap bitmap;
-                                            OutputStream output;
-
-                                            // Retrieve the image from the res folder
-                                            bitmap = finalImg;
-
-                                            // Create a new folder AndroidBegin in SD Card
-                                            File dir = new File(externalStorageDirectory.getAbsolutePath() + "/MoBooru/");
-                                            dir.mkdirs();
-
-                                            // Create a name for the saved image
-                                            File file = new File(dir, "tmp.png");
-
-                                            try {
-                                                // Share Intent
-                                                Intent share = new Intent(Intent.ACTION_SEND);
-
-                                                // Type of file to share
-                                                share.setType("image/jpeg");
-
-                                                output = new FileOutputStream(file);
-
-                                                // Compress into png format image from 0% - 100%
-                                                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output);
-                                                output.flush();
-                                                output.close();
-
-                                                // Locate the image to Share
-                                                Uri uri = Uri.fromFile(file);
-
-                                                // Pass the image into an Intnet
-                                                share.putExtra(Intent.EXTRA_STREAM, uri);
-
-                                                // Show the social share chooser list
-                                                startActivity(Intent.createChooser(share, "Share image"));
-
-                                            } catch (Exception e) {
-                                                // TODO Auto-generated catch block
-                                                e.printStackTrace();
+                                            // Perms
+                                            if (Build.VERSION.SDK_INT >= 23) {
+                                                if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                                                        == PackageManager.PERMISSION_GRANTED) {
+                                                    shareWallpaperExtStorage(finalImg);
+                                                } else {
+                                                    currentImg = finalImg;
+                                                    ActivityCompat.requestPermissions(Main.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 2);
+                                                }
+                                            } else {
+                                                shareWallpaperExtStorage(finalImg);
                                             }
                                         }
                                     });
 
                                     fab3.setOnClickListener(new View.OnClickListener() {
                                         public void onClick(View view) {
-                                            Long time = System.nanoTime();
-
-                                            ContentValues values = new ContentValues();
-                                            values.put(MediaStore.Images.Media.TITLE, Long.toString(time));
-                                            values.put(MediaStore.Images.Media.DISPLAY_NAME, Long.toString(time));
-                                            values.put(MediaStore.Images.Media.DESCRIPTION, "");
-                                            values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-                                            values.put(MediaStore.Images.Media.DATE_ADDED, time);
-                                            values.put(MediaStore.Images.Media.DATE_TAKEN, time);
-
-                                            Uri uri = null;
-
-                                            try {
-                                                uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-
-                                                if (finalImg != null) {
-                                                    fixMediaDir();
-                                                    OutputStream imageOut = getContentResolver().openOutputStream(uri);
-
-                                                    try {
-                                                        finalImg.compress(Bitmap.CompressFormat.JPEG, 100, imageOut);
-                                                    } finally {
-                                                        imageOut.close();
-                                                    }
-
-                                                    Toast.makeText(getApplicationContext(),
-                                                            "Saved image " + Long.toString(time) + " to gallery",
-                                                            Toast.LENGTH_LONG).show();
+                                            // Perms
+                                            if (Build.VERSION.SDK_INT >= 23) {
+                                                if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                                                        == PackageManager.PERMISSION_GRANTED) {
+                                                    writeWallpaperExtStorage(finalImg);
                                                 } else {
-                                                    Toast.makeText(getApplicationContext(),
-                                                            "Failed to save image " + Long.toString(time) + " to gallery",
-                                                            Toast.LENGTH_LONG).show();
-                                                    getContentResolver().delete(uri, null, null);
-                                                    uri = null;
+                                                    currentImg = finalImg;
+                                                    ActivityCompat.requestPermissions(Main.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
                                                 }
-                                            } catch (Exception e) {
-                                                e.printStackTrace();
-                                                Toast.makeText(getApplicationContext(),
-                                                        "Failed to save image " + Long.toString(time) + " to gallery, please check storage permissions",
-                                                        Toast.LENGTH_LONG).show();
-                                                if (uri != null) {
-                                                    getContentResolver().delete(uri, null, null);
-                                                    uri = null;
-                                                }
+                                            } else {
+                                                writeWallpaperExtStorage(finalImg);
                                             }
                                         }
                                     });
@@ -768,13 +771,44 @@ public class Main extends AppCompatActivity {
                                     fab5.setOnClickListener(new View.OnClickListener() {
                                         public void onClick(View view) {
                                             try {
-                                                favorites.add(selected);
-                                                String serial = gson.toJson(favorites, dataList);
+                                                if (favorites.contains(selected)) {
+                                                    Toast.makeText(getApplicationContext(),
+                                                            "Already in favorites!",
+                                                            Toast.LENGTH_LONG).show();
+                                                } else {
+                                                    favorites.add(selected);
+                                                    String serial = gson.toJson(favorites, dataList);
+                                                    prefsEditor.putString("FAVORITES", serial);
+                                                    prefsEditor.apply();
+                                                    Toast.makeText(getApplicationContext(),
+                                                            "Added to favorites!",
+                                                            Toast.LENGTH_LONG).show();
+                                                }
+                                            } catch (Exception e) {
+                                                // TODO Auto-generated catch block
+                                                e.printStackTrace();
+                                            }
+                                        }
+                                    });
+
+                                    fab6.setOnClickListener(new View.OnClickListener() {
+                                        public void onClick(View view) {
+                                            try {
+//                                                String serial = gson.toJson(favorites, dataList);
+                                                datas.remove(position);
+                                                String serial = gson.toJson(datas, dataList);
                                                 prefsEditor.putString("FAVORITES", serial);
                                                 prefsEditor.apply();
                                                 System.out.println(serial);
+                                                adapter.notifyDataSetChanged();
+                                                dialog.dismiss();
+                                                if (datas.size() == 0) {
+                                                    restartMain(false);
+                                                }
+                                                Toast.makeText(getApplicationContext(),
+                                                        "Removed from favorites",
+                                                        Toast.LENGTH_LONG).show();
                                             } catch (Exception e) {
-                                                // TODO Auto-generated catch block
                                                 e.printStackTrace();
                                             }
                                         }
@@ -794,6 +828,7 @@ public class Main extends AppCompatActivity {
                                 }
                             });
                         } catch (final Exception ex) {
+
                         }
                     }
                 }.start();
@@ -803,7 +838,7 @@ public class Main extends AppCompatActivity {
 
     private boolean isNetworkAvailable() {
         ConnectivityManager connectivityManager
-                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                = (ConnectivityManager) getSystemService(getApplicationContext().CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
@@ -856,6 +891,8 @@ public class Main extends AppCompatActivity {
         }
     }
 
+    // todo: add time filter
+
     // Rebuild index with new sub metadata
     //
     public void setFavoriteSubs() {
@@ -865,13 +902,26 @@ public class Main extends AppCompatActivity {
         }
     }
 
+    public void onBackPressed() {
+        if (viewingFavorites) {
+            overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
+            restartMain(false);
+            overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
+        } else {
+            finish();
+        }
+    }
+
+    public void restartMain(boolean viewingFavorites) {
+        Intent intent = getIntent();
+        intent.putExtra("viewingFavorites", viewingFavorites);
+        finish();
+        startActivity(intent);
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         return super.onTouchEvent(event);
-    }
-
-    public Context getActivity() {
-        return this;
     }
 
     @Override
@@ -882,9 +932,9 @@ public class Main extends AppCompatActivity {
             finish();
         }
 
-        ((RelativeLayout) (findViewById(R.id.nav_subs))).getChildAt(0).setVisibility(viewingFavorites ? View.GONE : View.VISIBLE);
-        ((RelativeLayout) (findViewById(R.id.nav_favorites))).getChildAt(0).setVisibility(viewingFavorites ? View.GONE : View.VISIBLE);
-        ((RelativeLayout) (findViewById(R.id.nav_back))).getChildAt(0).setVisibility(viewingFavorites ? View.VISIBLE : View.GONE);
+        navigationView.getMenu().findItem(R.id.nav_subs).setVisible(!viewingFavorites);
+        navigationView.getMenu().findItem(R.id.nav_favorites).setVisible(!viewingFavorites);
+        navigationView.getMenu().findItem(R.id.nav_back).setVisible(viewingFavorites);
 
         SwitchCompat nsfwToggle = (SwitchCompat) ((RelativeLayout) (navigationView.findViewById(R.id.nsfw_toggle))).getChildAt(0);
         SwitchCompat fullScreenToggle = (SwitchCompat) ((RelativeLayout) (navigationView.findViewById(R.id.fullscreen_toggle))).getChildAt(0);
@@ -1238,6 +1288,120 @@ public class Main extends AppCompatActivity {
             // LIST
             loadingMore = false;
             inDetProgressBar.setVisibility(View.GONE);
+        }
+    }
+
+    public void writeWallpaperExtStorage(Bitmap finalImg) {
+        Long time = System.nanoTime();
+
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.TITLE, Long.toString(time));
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, Long.toString(time));
+        values.put(MediaStore.Images.Media.DESCRIPTION, "");
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+        values.put(MediaStore.Images.Media.DATE_ADDED, time);
+        values.put(MediaStore.Images.Media.DATE_TAKEN, time);
+
+        Uri uri = null;
+
+        try {
+            uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+
+            if (finalImg != null) {
+                fixMediaDir();
+                OutputStream imageOut = getContentResolver().openOutputStream(uri);
+
+                try {
+                    finalImg.compress(Bitmap.CompressFormat.JPEG, 100, imageOut);
+                } finally {
+                    imageOut.close();
+                }
+
+                Toast.makeText(getApplicationContext(),
+                        "Saved image " + Long.toString(time) + " to gallery",
+                        Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(getApplicationContext(),
+                        "Failed to save image " + Long.toString(time) + " to gallery",
+                        Toast.LENGTH_LONG).show();
+                getContentResolver().delete(uri, null, null);
+                uri = null;
+            }
+        } catch (Exception e) {
+            Toast.makeText(getApplicationContext(),
+                    "Failed to save image " + Long.toString(time) + " to gallery",
+                    Toast.LENGTH_LONG).show();
+            if (uri != null) {
+                getContentResolver().delete(uri, null, null);
+                uri = null;
+            }
+        }
+    }
+
+    public void shareWallpaperExtStorage(Bitmap finalImg) {
+        // Create a new folder AndroidBegin in SD Card
+        File dir = new File(externalStorageDirectory.getAbsolutePath() + "/MoBooru/");
+        dir.mkdirs();
+
+        // Create a name for the saved image
+        File file = new File(dir, "tmp.png");
+        Bitmap bitmap = finalImg;
+        OutputStream output;
+
+        try {
+            // Share Intent
+            Intent share = new Intent(Intent.ACTION_SEND);
+
+            // Type of file to share
+            share.setType("image/jpeg");
+
+            output = new FileOutputStream(file);
+
+            // Compress into png format image from 0% - 100%
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output);
+            output.flush();
+            output.close();
+
+            // Locate the image to Share
+            Uri uri = Uri.fromFile(file);
+
+            // Pass the image into an Intnet
+            share.putExtra(Intent.EXTRA_STREAM, uri);
+
+            // Show the social share chooser list
+            startActivity(Intent.createChooser(share, "Share image"));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(getApplicationContext(),
+                    "Failed to share image, please check storage permissions",
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case 1:
+                if ((grantResults.length > 0) && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    writeWallpaperExtStorage(currentImg);
+                } else {
+                    Toast.makeText(getApplicationContext(),
+                            "Permission to save images was not granted",
+                            Toast.LENGTH_LONG).show();
+                }
+                break;
+            case 2:
+                if ((grantResults.length > 0) && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    shareWallpaperExtStorage(currentImg);
+                } else {
+                    Toast.makeText(getApplicationContext(),
+                            "Permission to share/ save images was not granted",
+                            Toast.LENGTH_LONG).show();
+                }
+                break;
+
+            default:
+                break;
         }
     }
 }

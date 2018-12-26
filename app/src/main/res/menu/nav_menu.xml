@@ -5,13 +5,13 @@
     <group android:id="@+id/group_app"
         android:checkableBehavior="single">
         <item android:id="@+id/nav_subs"
-            android:title="Subreddits"/>
+            android:title="Subreddits" />
 
         <item android:id="@+id/nav_favorites"
-            android:title="Favorites"/>
+            android:title="Favorites" />
 
         <item android:id="@+id/nav_back"
-            android:title="Back to selected subs"/>
+            android:title="Back to selected subs" />
 
     </group>
     <group

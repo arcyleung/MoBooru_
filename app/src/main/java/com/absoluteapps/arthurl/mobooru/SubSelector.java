@@ -41,8 +41,8 @@ import java.util.Locale;
 
 public class SubSelector extends AppCompatActivity {
 
-    List<Sub> origList;
-    List<Sub> subsList;
+    ArrayList<Sub> origList;
+    ArrayList<Sub> subsList;
     HashMap<Integer, Sub> subsMap;
     HashSet<Integer> selectedSubs;
     CustomAdapter adp = null;
@@ -163,7 +163,7 @@ public class SubSelector extends AppCompatActivity {
 
     private void displayList() {
         Collections.sort(subsList);
-        adp = new CustomAdapter(this, R.layout.activity_settings_subs_checkboxes, new ArrayList<Sub>(subsList));
+        adp = new CustomAdapter(this, R.layout.activity_settings_subs_checkboxes, subsList);
         ListView lv = (ListView) findViewById(R.id.listView);
         lv.setAdapter(adp);
 
