@@ -1176,34 +1176,6 @@ public class Main extends AppCompatActivity {
                     }
                     executeAsyncTask(new UpdateIndex());
 
-//                    new Thread() {
-//                        @Override
-//                        public void run() {
-//
-//                            updateSubsList();
-//                            detProgressBar.setVisibility(View.GONE);
-//                        }
-//                    }.start();
-//
-//                    new Thread(new Runnable() {
-//                        public void run() {
-//                            int progressStatusCounter = 0;
-//                            while (progressStatusCounter < 100) {
-//                                progressStatusCounter += 2;
-//                                final int finalProgressStatusCounter = progressStatusCounter;
-//                                progressHandler.post(new Runnable() {
-//                                    public void run() {
-//                                        detProgressBar.setProgress(finalProgressStatusCounter);
-//                                    }
-//                                });
-//                                try {
-//                                    Thread.sleep(300);
-//                                } catch (InterruptedException e) {
-//                                    e.printStackTrace();
-//                                }
-//                            }
-//                        }
-//                    }).start();
                 }
 
 
