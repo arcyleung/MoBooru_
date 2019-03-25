@@ -298,7 +298,13 @@ public class Main extends AppCompatActivity {
 //                        drawerLayout.closeDrawers();
 
                     case R.id.nav_favorites:
-                        restartMain(true);
+                        if (!timeToUpdate) {
+                            restartMain(true);
+                        } else {
+                            Toast.makeText(getApplicationContext(),
+                                    "Please wait until indexing finishes...",
+                                    Toast.LENGTH_LONG).show();
+                        }
                         return true;
 
                     case R.id.nav_back:
@@ -403,7 +409,6 @@ public class Main extends AppCompatActivity {
         if (!isNetworkAvailable()) {
             final AlertDialog d = new AlertDialog.Builder(Main.this)
                     .setTitle("No network connection")
-//                                .setMessage("Author: arcyleung\nSite: http://arcyleung.com")
                     .setNegativeButton("Quit", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
                             moveTaskToBack(true);
@@ -574,7 +579,6 @@ public class Main extends AppCompatActivity {
                     public void run() {
                         Bitmap img = null;
                         try {
-
                             final Bitmap tmp = new DownloadImage(zoomImageView).execute(selected.imgUrl).get();
                             if (tmp == null) {
                                 Toast.makeText(getApplicationContext(),
@@ -1054,6 +1058,7 @@ public class Main extends AppCompatActivity {
                                     obj.getInt("subscribers"),
                                     s.selected,
                                     obj.getBoolean("over18"),
+                                    s.isCustom,
                                     obj.getString("public_description")
                             )
                     );
@@ -1062,7 +1067,7 @@ public class Main extends AppCompatActivity {
                     prefsEditor.apply();
                 } catch (Exception ex) {
 //                ex.printStackTrace();
-                    subsList.put(s.subID, new Sub(s.subName, s.subID, 0, s.selected, false, ""));
+                    subsList.put(s.subID, new Sub(s.subName, s.subID, 0, s.selected, false, false, ""));
                 }
                 publishProgress((int) Math.ceil(prog * 1.0 / subsList.values().size() * 100 * progressBarScale));
                 prog++;
@@ -1132,7 +1137,6 @@ public class Main extends AppCompatActivity {
                     img = null;
                     throw new RuntimeException(
                             "Canvas: trying to draw too large(" + bitmapSize + "bytes) bitmap.");
-
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -1175,10 +1179,7 @@ public class Main extends AppCompatActivity {
                         subsList.put(arr.getJSONObject(j).getInt("value"), new Sub(arr.getJSONObject(j).getString("name"), arr.getJSONObject(j).getInt("value")));
                     }
                     executeAsyncTask(new UpdateIndex());
-
                 }
-
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -1193,7 +1194,6 @@ public class Main extends AppCompatActivity {
                 while (scan.hasNext())
                     str += scan.nextLine();
                 scan.close();
-
                 jsonObjs = new JSONArray(str);
 
             } catch (Exception e) {

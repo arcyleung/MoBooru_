@@ -11,31 +11,17 @@ public class Sub implements Serializable, Comparable {
     public int subscriberCount = 0;
     public boolean selected = false;
     public boolean isNSFW = false;
+    public boolean isCustom = false;
     public String desc;
 
-    public String getDesc() {
-        return desc;
-    }
-
-    public void setDesc(String desc) {
-        this.desc = desc;
-    }
-
-    public Sub(String subName, int subID, int subscriberCount, boolean selected, boolean isNSFW, String desc) {
+    public Sub(String subName, int subID, int subscriberCount, boolean selected, boolean isNSFW, boolean isCustom, String desc) {
         this.subName = subName;
         this.subID = subID;
         this.subscriberCount = subscriberCount;
         this.selected = selected;
         this.isNSFW = isNSFW;
+        this.isCustom = isCustom;
         this.desc = desc;
-    }
-
-    public boolean isNSFW() {
-        return isNSFW;
-    }
-
-    public void setNSFW(boolean NSFW) {
-        isNSFW = NSFW;
     }
 
     public Sub(String subName, int id) {
@@ -47,6 +33,26 @@ public class Sub implements Serializable, Comparable {
         this.subName = subName.toLowerCase();
         this.subID = id;
         this.subscriberCount = subscriberCount;
+    }
+
+    public Sub() {
+
+    }
+
+    public String getDesc() {
+        return desc;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
+
+    public boolean isNSFW() {
+        return isNSFW;
+    }
+
+    public void setNSFW(boolean NSFW) {
+        isNSFW = NSFW;
     }
 
     public int compareTo(Object s2) {

@@ -33,15 +33,8 @@
                 android:layout_weight="0.96"
                 android:backgroundTint="#ff0066"
                 android:hint="Search subreddits"
-                android:textCursorDrawable="@null"></EditText>
-
-            <Button
-                android:id="@+id/clearText"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_weight="0.02"
-                android:background="@android:drawable/ic_delete"
-                android:onClick="clear" />
+                android:textCursorDrawable="@null">
+            </EditText>
 
             <ImageButton
                 android:id="@+id/info"
@@ -56,6 +49,20 @@
                 android:maxWidth="5dp"
                 android:maxHeight="5dp"
                 app:srcCompat="@android:drawable/ic_menu_info_details" />
+
+            <ImageButton
+                android:id="@+id/addCustomSub"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_gravity="right|center_vertical"
+                android:layout_weight="0.02"
+                android:background="@android:color/transparent"
+                android:clickable="true"
+                android:maxWidth="5dp"
+                android:maxHeight="5dp"
+                app:srcCompat="@android:drawable/ic_menu_add" />
 
         </LinearLayout>
     </android.support.v7.widget.Toolbar>

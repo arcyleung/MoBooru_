@@ -1,10 +1,12 @@
 package com.absoluteapps.arthurl.mobooru;
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -12,13 +14,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.view.ContextThemeWrapper;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
-import android.text.Html;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -27,17 +29,21 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import org.json.JSONObject;
+
 import java.lang.reflect.Type;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
+import java.util.Scanner;
 
 public class SubSelector extends AppCompatActivity {
 
@@ -48,21 +54,24 @@ public class SubSelector extends AppCompatActivity {
     CustomAdapter adp = null;
     Gson gson = new Gson();
     Button mClearText;
-    ImageButton mInfo;
+    ImageButton mInfo, mAddCustomSub;
     EditText mEditText;
     Type hashSetMap = new TypeToken<HashSet<Integer>>() {
     }.getType();
+    ProgressDialog progressDialog;
+    AddCustomSub addCustomSubTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings_subs);
         mEditText = (EditText) findViewById(R.id.search);
-        mClearText = (Button) findViewById(R.id.clearText);
+        mAddCustomSub = (ImageButton) findViewById(R.id.addCustomSub);
+//        mClearText = (Button) findViewById(R.id.clearText);
         mInfo = (ImageButton) findViewById(R.id.info);
 
         //initially clear button is invisible
-        mClearText.setVisibility(View.INVISIBLE);
+//        mClearText.setVisibility(View.INVISIBLE);
 
         //clear button visibility on text change
         mEditText.addTextChangedListener(new TextWatcher() {
@@ -80,9 +89,9 @@ public class SubSelector extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (s.length() != 0) {
-                    mClearText.setVisibility(View.VISIBLE);
+//                    mClearText.setVisibility(View.VISIBLE);
                 } else {
-                    mClearText.setVisibility(View.INVISIBLE);
+//                    mClearText.setVisibility(View.INVISIBLE);
                 }
             }
         });
@@ -103,6 +112,41 @@ public class SubSelector extends AppCompatActivity {
                         .create();
 
                 d1.show();
+            }
+        });
+
+        // Add Custom sub button
+        mAddCustomSub.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final InputMethodManager imm = (InputMethodManager) SubSelector.this.getSystemService(SubSelector.INPUT_METHOD_SERVICE);
+                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(new ContextThemeWrapper(SubSelector.this, R.style.AppTheme));
+                LayoutInflater inflater = LayoutInflater.from(SubSelector.this);
+                final View dialogView = inflater.inflate(R.layout.add_custom_sub, null);
+                dialogBuilder.setView(dialogView);
+                final EditText edt = (EditText) dialogView.findViewById(R.id.subEntry);
+
+                dialogBuilder.setTitle("Add custom subreddit");
+                dialogBuilder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+
+                        progressDialog = ProgressDialog.show(SubSelector.this, "Adding sub", "...", true);
+                        addCustomSubTask = new AddCustomSub(edt.getText().toString());
+                        addCustomSubTask.execute();
+
+                        imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
+                    }
+                });
+                dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
+                    }
+                });
+                AlertDialog b = dialogBuilder.create();
+                b.show();
+                edt.requestFocus();
+
+                imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
             }
         });
 
@@ -129,7 +173,7 @@ public class SubSelector extends AppCompatActivity {
 
     public void clear(View view) {
         mEditText.setText("");
-        mClearText.setVisibility(View.INVISIBLE);
+//        mClearText.setVisibility(View.INVISIBLE);
     }
 
     @Override
@@ -236,17 +280,23 @@ public class SubSelector extends AppCompatActivity {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                 Sub sub = (Sub) parent.getItemAtPosition(position);
-                final AlertDialog d1 = new AlertDialog.Builder(new ContextThemeWrapper(SubSelector.this, R.style.AppTheme))
-                        .setTitle("About " + sub.subName + ":")
-                        .setNegativeButton("Back", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                // do nothing
-                            }
-                        })
-                        .setMessage(sub.desc)
-                        .create();
+                if (sub.desc.length() > 0) {
+                    final AlertDialog d1 = new AlertDialog.Builder(new ContextThemeWrapper(SubSelector.this, R.style.AppTheme))
+                            .setTitle("About " + sub.subName + ":")
+                            .setNegativeButton("Back", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    // do nothing
+                                }
+                            })
+                            .setMessage(sub.desc)
+                            .create();
 
-                d1.show();
+                    d1.show();
+                } else {
+                    Toast.makeText(getApplicationContext(),
+                            "No description found...",
+                            Toast.LENGTH_LONG).show();
+                }
                 return true;
             }
         });
@@ -281,12 +331,6 @@ public class SubSelector extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-//        String serial = "";
-//        for (Sub s : subsList){
-//            if (s.selectedString){
-//                serial = serial + s.subID+",";
-//            }
-//        }
         String serial = gson.toJson(selectedSubs, hashSetMap);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         SharedPreferences.Editor prefsEditor = prefs.edit();
@@ -352,6 +396,95 @@ public class SubSelector extends AppCompatActivity {
             CheckBox name;
             TextView isNSFW;
             TextView subscribers;
+        }
+    }
+
+    private class AddCustomSub extends AsyncTask<Void, Integer, Integer> {
+        String subName;
+
+        AddCustomSub(String subName) {
+            this.subName = subName;
+        }
+
+        @Override
+        protected Integer doInBackground(Void... params) {
+            // Parse subreddit
+            // if begins with r/, pass directly
+            // else prefix with r/
+            if (subName.length() == 0)
+                return -1;
+            if (!subName.startsWith("r/"))
+                subName = "r/" + subName;
+
+            String info;
+            JSONObject obj;
+            try {
+                String aboutURL = "https://www.reddit.com/" + subName + "/about.json";
+                URL url = new URL(aboutURL);
+                Scanner scan = new Scanner(url.openStream());
+                info = "";
+                while (scan.hasNext())
+                    info += scan.nextLine();
+                scan.close();
+                obj = new JSONObject(info).getJSONObject("data");
+//                subsList.add(
+//                        -1,
+//                        new Sub(
+//                                subName,
+//                                -1,
+//                                obj.getInt("subscribers"),
+//                                s.selected,
+//                                obj.getBoolean("over18"),
+//                                s.isCustom,
+//                                obj.getString("public_description")
+//                        )
+//                );
+                if (obj.getInt("dist") == 0) {
+                    // Invalid or empty subreddit
+                    return -2;
+                } else {
+
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                return -3;
+            }
+            return 0;
+        }
+
+        @Override
+        protected void onPostExecute(Integer result) {
+            switch (result) {
+                case 0:
+                    Toast.makeText(getApplicationContext(),
+                            "Added " + subName + " sub...",
+                            Toast.LENGTH_LONG).show();
+                    break;
+                case -1:
+                    Toast.makeText(getApplicationContext(),
+                            "Subreddit cannot be blank!",
+                            Toast.LENGTH_LONG).show();
+                    break;
+                case -2:
+                    Toast.makeText(getApplicationContext(),
+                            "Subreddit " + subName + " does not exist or is empty",
+                            Toast.LENGTH_LONG).show();
+                    break;
+                case -3:
+                    Toast.makeText(getApplicationContext(),
+                            "Error " + subName + " sub...",
+                            Toast.LENGTH_LONG).show();
+                    break;
+            }
+            progressDialog.dismiss();
+        }
+
+        protected void onPreExecute() {
+
+        }
+
+        protected void onProgressUpdate(Integer... values) {
+
         }
     }
 }
