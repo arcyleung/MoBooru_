@@ -399,6 +399,7 @@ public class SubSelector extends AppCompatActivity {
         }
     }
 
+    // TODO: Implement as fallback method if redditbooru is down
     private class AddCustomSub extends AsyncTask<Void, Integer, Integer> {
         String subName;
 
@@ -416,6 +417,8 @@ public class SubSelector extends AppCompatActivity {
             if (!subName.startsWith("r/"))
                 subName = "r/" + subName;
 
+            subName.trim();
+
             String info;
             JSONObject obj;
             try {
@@ -427,18 +430,18 @@ public class SubSelector extends AppCompatActivity {
                     info += scan.nextLine();
                 scan.close();
                 obj = new JSONObject(info).getJSONObject("data");
-//                subsList.add(
-//                        -1,
-//                        new Sub(
-//                                subName,
-//                                -1,
-//                                obj.getInt("subscribers"),
-//                                s.selected,
-//                                obj.getBoolean("over18"),
-//                                s.isCustom,
-//                                obj.getString("public_description")
-//                        )
-//                );
+                subsList.add(
+                        -1,
+                        new Sub(
+                                subName,
+                                -1,
+                                obj.getInt("subscribers"),
+                                true,
+                                obj.getBoolean("over18"),
+                                true,
+                                obj.getString("public_description")
+                        )
+                );
                 if (obj.getInt("dist") == 0) {
                     // Invalid or empty subreddit
                     return -2;
