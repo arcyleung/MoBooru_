@@ -37,7 +37,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -46,7 +45,6 @@ import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -151,7 +149,8 @@ public class Main extends AppCompatActivity {
     SwipeRefreshLayout swipeContainer;
 
     // Sharedprefs, serialization, storage
-    HashMap<Integer, Sub> subsList = new HashMap<>();
+    HashMap<Integer, Sub> subsMap = new HashMap<>();
+    HashMap<Integer, Sub> customSubsMap = new HashMap<>();
     HashSet<Integer> selectedSubs = new HashSet<>();
     long lastIndexTime;
     boolean timeToUpdate = false;
@@ -237,7 +236,8 @@ public class Main extends AppCompatActivity {
             prefsEditor = prefs.edit();
 
             // Get saved subs
-            subsList = gson.fromJson(prefs.getString("SUBS", "{1: {subName: 'Awwnime', subID: 1, subscriberCount: 0, selected: true, isNSFW: false, desc: ''}}"), intSubMap);
+            subsMap = gson.fromJson(prefs.getString("SUBS", "{1: {subName: 'Awwnime', subID: 1, subscriberCount: 0, selected: true, isNSFW: false, desc: ''}}"), intSubMap);
+            customSubsMap = gson.fromJson(prefs.getString("CUSTOM_SUBS", "{}"), intSubMap);
             selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[1]"), intSet);
             favorites = gson.fromJson(prefs.getString("FAVORITES", "[]"), dataList);
             showNsfw = prefs.getBoolean("SHOW_NSFW", false);
@@ -287,7 +287,7 @@ public class Main extends AppCompatActivity {
                 switch (item.getItemId()) {
                     case R.id.nav_subs:
                         if (!timeToUpdate) {
-                            startActivity(new Intent(Main.this, SubSelector.class).putExtra("subsList", subsList));
+                            startActivity(new Intent(Main.this, SubSelector.class).putExtra("subsMap", subsMap).putExtra("customSubsMap", customSubsMap));
                             finish();
                         } else {
                             Toast.makeText(getApplicationContext(),
@@ -1038,7 +1038,7 @@ public class Main extends AppCompatActivity {
         @Override
         protected Void doInBackground(Void... params) {
 
-            for (Sub s : subsList.values()) {
+            for (Sub s : subsMap.values()) {
                 String info;
                 JSONObject obj;
                 try {
@@ -1050,7 +1050,7 @@ public class Main extends AppCompatActivity {
                         info += scan.nextLine();
                     scan.close();
                     obj = new JSONObject(info).getJSONObject("data");
-                    subsList.put(
+                    subsMap.put(
                             s.subID,
                             new Sub(
                                     s.subName,
@@ -1062,14 +1062,14 @@ public class Main extends AppCompatActivity {
                                     obj.getString("public_description")
                             )
                     );
-                    String serial = gson.toJson(subsList, intSubMap);
+                    String serial = gson.toJson(subsMap, intSubMap);
                     prefsEditor.putString("SUBS", serial);
                     prefsEditor.apply();
                 } catch (Exception ex) {
 //                ex.printStackTrace();
-                    subsList.put(s.subID, new Sub(s.subName, s.subID, 0, s.selected, false, false, ""));
+                    subsMap.put(s.subID, new Sub(s.subName, s.subID, 0, s.selected, false, false, ""));
                 }
-                publishProgress((int) Math.ceil(prog * 1.0 / subsList.values().size() * 100 * progressBarScale));
+                publishProgress((int) Math.ceil(prog * 1.0 / subsMap.values().size() * 100 * progressBarScale));
                 prog++;
             }
             return null;
@@ -1174,9 +1174,9 @@ public class Main extends AppCompatActivity {
                 subsJSON = subsJSON.substring(0, subsJSON.indexOf("]") + 1);
                 arr = new JSONArray(subsJSON);
 
-                if (timeToUpdate || arr.length() > subsList.size()) {
+                if (timeToUpdate || arr.length() > subsMap.size()) {
                     for (int j = 0; j < arr.length(); j++) {
-                        subsList.put(arr.getJSONObject(j).getInt("value"), new Sub(arr.getJSONObject(j).getString("name"), arr.getJSONObject(j).getInt("value")));
+                        subsMap.put(arr.getJSONObject(j).getInt("value"), new Sub(arr.getJSONObject(j).getString("name"), arr.getJSONObject(j).getInt("value")));
                     }
                     executeAsyncTask(new UpdateIndex());
                 }

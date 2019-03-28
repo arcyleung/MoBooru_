@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Scanner;
 
 public class SubSelector extends AppCompatActivity {
@@ -50,7 +51,9 @@ public class SubSelector extends AppCompatActivity {
     ArrayList<Sub> origList;
     ArrayList<Sub> subsList;
     HashMap<Integer, Sub> subsMap;
+    HashMap<Integer, Sub> customSubsMap;
     HashSet<Integer> selectedSubs;
+    HashSet<Integer> selectedCustomSubs;
     CustomAdapter adp = null;
     Gson gson = new Gson();
     Button mClearText;
@@ -60,6 +63,10 @@ public class SubSelector extends AppCompatActivity {
     }.getType();
     ProgressDialog progressDialog;
     AddCustomSub addCustomSubTask;
+    SharedPreferences prefs;
+    SharedPreferences.Editor prefsEditor;
+    Type intSubMap = new TypeToken<Map<Integer, Sub>>() {
+    }.getType();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,7 +140,6 @@ public class SubSelector extends AppCompatActivity {
                         progressDialog = ProgressDialog.show(SubSelector.this, "Adding sub", "...", true);
                         addCustomSubTask = new AddCustomSub(edt.getText().toString());
                         addCustomSubTask.execute();
-
                         imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
                     }
                 });
@@ -151,11 +157,13 @@ public class SubSelector extends AppCompatActivity {
         });
 
         // List of subs
-        subsMap = (HashMap<Integer, Sub>) getIntent().getSerializableExtra("subsList");
+        subsMap = (HashMap<Integer, Sub>) getIntent().getSerializableExtra("subsMap");
+        customSubsMap = (HashMap<Integer, Sub>) getIntent().getSerializableExtra("customSubsMap");
         origList = new ArrayList(subsMap.values());
 
         // Checked favorite subs <sub_id, checked>
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        prefsEditor = prefs.edit();
         try {
             selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[" + R.string.defaultsub + "]"), hashSetMap);
             for (int id : selectedSubs) {
@@ -167,6 +175,7 @@ public class SubSelector extends AppCompatActivity {
             selectedSubs.add(1);
         }
         subsList = new ArrayList<>(subsMap.values());
+        subsList.addAll(customSubsMap.values());
         displayList();
         buttonPressed();
     }
@@ -302,12 +311,14 @@ public class SubSelector extends AppCompatActivity {
         });
     }
 
-    public String thousandsFormatter(int value) {
+    public String subscriberCountFormatter(int value) {
         if (value < 1000) {
             return value + " ";
+        } else if (value < 1000000) {
+            return Math.round(value / 100) / (1.0 * 10) + "k ";
+        } else {
+            return Math.round(value / 100000) / (1.0 * 10) + "M ";
         }
-        int scale = (int) Math.pow(10, 1);
-        return Math.round(value / 100) / (1.0 * 10) + "k ";
     }
 
     private void buttonPressed() {
@@ -316,7 +327,6 @@ public class SubSelector extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 StringBuffer response = new StringBuffer();
-
                 response.append(" Saved: \n");
                 ArrayList<Sub> s = adp.subsList;
                 for (Sub d : s) {
@@ -332,8 +342,6 @@ public class SubSelector extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         String serial = gson.toJson(selectedSubs, hashSetMap);
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        SharedPreferences.Editor prefsEditor = prefs.edit();
         prefsEditor.putString("SELECTED_SUBS", serial);
         prefsEditor.apply();
     }
@@ -372,7 +380,7 @@ public class SubSelector extends AppCompatActivity {
             holder.name.setChecked(selectedSubs.contains(sb.subID));
             holder.name.setTag(sb);
             holder.isNSFW.setText(sb.isNSFW ? "NSFW" : "");
-            holder.subscribers.setText(thousandsFormatter(sb.subscriberCount));
+            holder.subscribers.setText(subscriberCountFormatter(sb.subscriberCount));
             return convertView;
         }
 
@@ -427,22 +435,35 @@ public class SubSelector extends AppCompatActivity {
                     info += scan.nextLine();
                 scan.close();
                 obj = new JSONObject(info).getJSONObject("data");
-//                subsList.add(
-//                        -1,
-//                        new Sub(
-//                                subName,
-//                                -1,
-//                                obj.getInt("subscribers"),
-//                                s.selected,
-//                                obj.getBoolean("over18"),
-//                                s.isCustom,
-//                                obj.getString("public_description")
-//                        )
-//                );
-                if (obj.getInt("dist") == 0) {
+                System.out.println(aboutURL);
+                if (obj.has("dist")) {
                     // Invalid or empty subreddit
                     return -2;
                 } else {
+                    Sub newSub = new Sub(
+                            subName,
+                            customSubsMap.size() + 10000,
+                            obj.getInt("subscribers"),
+                            true,
+                            obj.getBoolean("over18"),
+                            true,
+                            obj.getString("public_description")
+                    );
+                    customSubsMap.put(customSubsMap.size() + 10000, newSub);
+                    String serial = gson.toJson(customSubsMap, intSubMap);
+                    prefsEditor.putString("CUSTOM_SUBS", serial);
+                    prefsEditor.apply();
+                    origList.add(newSub);
+                    subsList.add(newSub);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            displayList();
+                            for (Sub s : subsList) {
+                                System.out.println(s.subName + " ---- " + s.subID);
+                            }
+                        }
+                    });
 
                 }
             } catch (Exception ex) {
