@@ -407,6 +407,7 @@ public class SubSelector extends AppCompatActivity {
         }
     }
 
+    // TODO: Implement as fallback method if redditbooru is down
     private class AddCustomSub extends AsyncTask<Void, Integer, Integer> {
         String subName;
 
@@ -423,6 +424,8 @@ public class SubSelector extends AppCompatActivity {
                 return -1;
             if (!subName.startsWith("r/"))
                 subName = "r/" + subName;
+
+            subName.trim();
 
             String info;
             JSONObject obj;
