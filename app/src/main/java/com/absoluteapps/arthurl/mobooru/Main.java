@@ -106,7 +106,7 @@ public class Main extends AppCompatActivity {
     int pageSize = 30;
     int current_page = 1;
     String mainsite = "https://redditbooru.com";
-    URL url1;
+    URL url;
     Display display;
     int screenWidth = 0;
     int screenHeight = 0;
@@ -152,6 +152,8 @@ public class Main extends AppCompatActivity {
     HashMap<Integer, Sub> subsMap = new HashMap<>();
     HashMap<Integer, Sub> customSubsMap = new HashMap<>();
     HashSet<Integer> selectedSubs = new HashSet<>();
+    HashSet<Integer> selectedCustomSubs = new HashSet<>();
+    HashMap<Integer, String> nextPages = new HashMap<>();
     long lastIndexTime;
     boolean timeToUpdate = false;
     Gson gson = new Gson();
@@ -236,9 +238,10 @@ public class Main extends AppCompatActivity {
             prefsEditor = prefs.edit();
 
             // Get saved subs
-            subsMap = gson.fromJson(prefs.getString("SUBS", "{1: {subName: 'Awwnime', subID: 1, subscriberCount: 0, selected: true, isNSFW: false, desc: ''}}"), intSubMap);
+            subsMap = gson.fromJson(prefs.getString("SUBS", "{1: {customSubName: 'Awwnime', subID: 1, subscriberCount: 0, selected: true, isNSFW: false, desc: ''}}"), intSubMap);
             customSubsMap = gson.fromJson(prefs.getString("CUSTOM_SUBS", "{}"), intSubMap);
             selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[1]"), intSet);
+            selectedCustomSubs = gson.fromJson(prefs.getString("SELECTED_CUSTOM_SUBS", "[]"), intSet);
             favorites = gson.fromJson(prefs.getString("FAVORITES", "[]"), dataList);
             showNsfw = prefs.getBoolean("SHOW_NSFW", false);
             toolbar.setVisibility(!prefs.getBoolean("FULLSCREEN", false) == true ? View.VISIBLE : View.GONE);
@@ -320,8 +323,7 @@ public class Main extends AppCompatActivity {
                                     }
                                 })
                                 .setIcon(R.drawable.ic_launcher)
-//                                .setMessage(Html.fromHtml(appName+" v"+verString+"<br>Author: arcyleung<br/><a href=\"http://arcyleung.com\">http://arcyleung.com</a><br/><br/><a href=\"https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=NVX2XKNCSFJKG\">Donate</a> to help support development!"))
-                                .setMessage(Html.fromHtml(appName + " v" + verString + "<br>Author: arcyleung<br/><a href=\"http://arcyleung.com\">http://arcyleung.com</a><br/><br/>Follow me on <a href=\"https://twitter.com/pspkazy\">Twitter</a> or <a href=\"https://www.linkedin.com/in/arcyleung/\">LinkedIn</a>! <br/> <br/> Please direct any questions about development to <a href=\"mailto:arcyleung@gmail.com?Subject=MoBooru Inquiry\" target=\"_top\">arcyleung@gmail.com</a>\n" +
+                                .setMessage(Html.fromHtml(appName + " v" + verString + "<br>Author: arcyleung<br/><a href=\"http://arcyleung.com\">http://arcyleung.com</a><br/><br/>Follow me on <a href=\"https://twitter.com/arcyleung\">Twitter</a> or <a href=\"https://www.linkedin.com/in/arcyleung/\">LinkedIn</a>! <br/> <br/> Please direct any questions about development to <a href=\"mailto:arcyleung@gmail.com?Subject=MoBooru Inquiry\" target=\"_top\">arcyleung@gmail.com</a>\n" +
                                         "</p> or if you want to help support development!"))
                                 .setOnDismissListener(new DialogInterface.OnDismissListener() {
                                                           @Override
@@ -436,7 +438,6 @@ public class Main extends AppCompatActivity {
                     overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
                     startActivity(new Intent(getApplicationContext(), Main.class));
                     overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
-
                 }
 
             });
@@ -1012,7 +1013,53 @@ public class Main extends AppCompatActivity {
                         data.redditSrc = ja.getJSONObject(i).getString("externalId");
                         data.title = ja.getJSONObject(i).getString("title").replaceAll("\\s*\\[.+?\\]\\s*", "").replace("&amp;", "&"); //+"\n("+data.score+"\uD83D\uDD3A)";
                         data.series = ja.getJSONObject(i).getString("title").replaceAll("^[^\\[]*", "").replace("&amp;", "&");
-//                        data.ogSrc = ja.getJSONObject(i).getString("sourceUrl");
+
+                        if (i == pageSize - 1) {
+                            lastIndexTime = Long.parseLong(ja.getJSONObject(i).getString("dateCreated"));
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    if (data.ogSrc.equals("null")) {
+                        data.ogSrc = "";
+                    }
+                    if (data.thumbImgUrl.equals("null")) {
+                        data.thumbImgUrl = "";
+                    }
+                    datas.add(data);
+                }
+            }
+        }
+        return datas;
+    }
+
+    public ArrayList<Data> addToArryDirect(JSONArray[] jas) {
+        if (loadingMore) {
+
+            //IMPLEMENT STOP LOADING ONCE ARRAYSIZE < PAGESIZE
+            if (ja == null) {
+                loadingMore = false;
+            } else {
+                if (ja.length() < pageSize) {
+                    pageSize = ja.length();
+                }
+                for (int i = 0; i < pageSize; i++) {
+                    Data data = new Data();
+                    try {
+                        // Image data
+                        data.imgUrl = ja.getJSONObject(i).getString("cdnUrl");
+                        data.width = ja.getJSONObject(i).getInt("width");
+                        data.height = ja.getJSONObject(i).getInt("height");
+                        data.rat = 1.0 * data.height / data.width;
+                        data.thumbImgUrl = ja.getJSONObject(i).getString("thumb") + "_" + thumbnail_size + "_" + thumbnail_size + ".jpg";
+
+                        // Metadata
+                        data.score = ja.getJSONObject(i).getString("score");
+                        data.nsfw = ja.getJSONObject(i).getBoolean("nsfw");
+                        data.redditSrc = ja.getJSONObject(i).getString("externalId");
+                        data.title = ja.getJSONObject(i).getString("title").replaceAll("\\s*\\[.+?\\]\\s*", "").replace("&amp;", "&"); //+"\n("+data.score+"\uD83D\uDD3A)";
+                        data.series = ja.getJSONObject(i).getString("title").replaceAll("^[^\\[]*", "").replace("&amp;", "&");
+
                         if (i == pageSize - 1) {
                             lastIndexTime = Long.parseLong(ja.getJSONObject(i).getString("dateCreated"));
                         }
@@ -1188,9 +1235,9 @@ public class Main extends AppCompatActivity {
 
             try {
                 selectedURL = "https://redditbooru.com/images/?sources=" + selectedString + "&afterDate=";
-                url1 = new URL(selectedURL + lastIndexTime);
+                url = new URL(selectedURL + lastIndexTime);
 
-                Scanner scan = new Scanner(url1.openStream());
+                Scanner scan = new Scanner(url.openStream());
                 while (scan.hasNext())
                     str += scan.nextLine();
                 scan.close();
@@ -1211,21 +1258,23 @@ public class Main extends AppCompatActivity {
 
     private class LoadMorePhotos extends AsyncTask<Void, Void, Void> {
         JSONArray tmp;
+        JSONArray[] customTmp = new JSONArray[selectedCustomSubs.size()];
 
         @Override
         protected Void doInBackground(Void... arg0) {
-            // SET LOADING MORE "TRUE"
+            // set loadingMore flag
             loadingMore = true;
 
-            // INCREMENT CURRENT PAGE
+            // Increment current page
             current_page += 1;
 
+            // Normal subs: via Redditbooru
             try {
                 // refactor into string scanner
                 selectedURL = "https://redditbooru.com/images/?sources=" + selectedString + "&afterDate=";
-                url1 = new URL(selectedURL + lastIndexTime);
+                url = new URL(selectedURL + lastIndexTime);
 
-                Scanner scan = new Scanner(url1.openStream());
+                Scanner scan = new Scanner(url.openStream());
                 String str = "";
                 while (scan.hasNext())
                     str += scan.nextLine();
@@ -1234,6 +1283,28 @@ public class Main extends AppCompatActivity {
                 tmp = new JSONArray(str);
             } catch (Exception e) {
                 e.printStackTrace();
+            }
+
+            // Custom subs: from Reddit directly
+            for (int i : selectedCustomSubs) {
+                try {
+                    System.out.println(customSubsMap.get(i).subName);
+                    String jsonURL = "https://www.reddit.com/" + customSubsMap.get(i).subName + "/.json";
+                    if (nextPages.containsKey(i)) {
+                        jsonURL += "?after="+nextPages.get(i);
+                    }
+                    url = new URL(jsonURL);
+                    Scanner scan = new Scanner(url.openStream());
+                    String posts = "";
+                    while (scan.hasNext())
+                        posts += scan.nextLine();
+                    scan.close();
+                    JSONObject obj = new JSONObject(posts).getJSONObject("data");
+                    customTmp[i] = obj.getJSONArray("children");
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
             return null;
         }
@@ -1250,7 +1321,13 @@ public class Main extends AppCompatActivity {
 
             // APPEND NEW DATA TO THE ARRAYLIST AND SET THE ADAPTER TO THE
             // LISTVIEW
+            // Initialize with normal data
             datas = addToArry(tmp);
+            // Append custom subs data
+            datas.addAll(addToArryDirect(customTmp));
+
+            String test = tmp.toString();
+
             adapter.datas = datas;
             adapter.notifyDataSetChanged();
 

@@ -166,8 +166,12 @@ public class SubSelector extends AppCompatActivity {
         prefsEditor = prefs.edit();
         try {
             selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[" + R.string.defaultsub + "]"), hashSetMap);
+            selectedCustomSubs = gson.fromJson(prefs.getString("SELECTED_CUSTOM_SUBS", "[]"), hashSetMap);
             for (int id : selectedSubs) {
                 subsMap.get(id).selected = true;
+            }
+            for (int id : selectedCustomSubs) {
+                customSubsMap.get(id).selected = true;
             }
         } catch (Exception ex) {
             // Set selectedString sub to awwnime only
@@ -268,14 +272,23 @@ public class SubSelector extends AppCompatActivity {
 
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
                 Sub sub = (Sub) parent.getItemAtPosition(position);
-                ((Sub) parent.getItemAtPosition(position)).selected = !((Sub) parent.getItemAtPosition(position)).selected;
                 CheckBox cb = (CheckBox) view.findViewById(R.id.checkBox);
-                boolean isSelected = selectedSubs.contains(sub.subID);
+
+                boolean isSelected = selectedSubs.contains(sub.subID) || selectedCustomSubs.contains(sub.subID);
                 if (isSelected) {
-                    selectedSubs.remove(sub.subID);
+                    if (sub.isCustom) {
+                        selectedCustomSubs.remove(sub.subID);
+                    } else {
+                        selectedSubs.remove(sub.subID);
+                    }
                 } else {
-                    selectedSubs.add(sub.subID);
+                    if (sub.isCustom) {
+                        selectedCustomSubs.add(sub.subID);
+                    } else {
+                        selectedSubs.add(sub.subID);
+                    }
                 }
                 cb.setChecked(!isSelected);
                 sub.selected = (!isSelected);
@@ -343,6 +356,8 @@ public class SubSelector extends AppCompatActivity {
         super.onPause();
         String serial = gson.toJson(selectedSubs, hashSetMap);
         prefsEditor.putString("SELECTED_SUBS", serial);
+        serial = gson.toJson(selectedCustomSubs, hashSetMap);
+        prefsEditor.putString("SELECTED_CUSTOM_SUBS", serial);
         prefsEditor.apply();
     }
 
@@ -377,7 +392,7 @@ public class SubSelector extends AppCompatActivity {
             Sub sb = subsList.get(position);
 
             holder.name.setText(sb.subName);
-            holder.name.setChecked(selectedSubs.contains(sb.subID));
+            holder.name.setChecked((!sb.isCustom && selectedSubs.contains(sb.subID)) || (sb.isCustom && selectedCustomSubs.contains((sb.subID))));
             holder.name.setTag(sb);
             holder.isNSFW.setText(sb.isNSFW ? "NSFW" : "");
             holder.subscribers.setText(subscriberCountFormatter(sb.subscriberCount));
@@ -409,10 +424,10 @@ public class SubSelector extends AppCompatActivity {
 
     // TODO: Implement as fallback method if redditbooru is down
     private class AddCustomSub extends AsyncTask<Void, Integer, Integer> {
-        String subName;
+        String customSubName;
 
         AddCustomSub(String subName) {
-            this.subName = subName;
+            this.customSubName = subName;
         }
 
         @Override
@@ -420,17 +435,22 @@ public class SubSelector extends AppCompatActivity {
             // Parse subreddit
             // if begins with r/, pass directly
             // else prefix with r/
-            if (subName.length() == 0)
+            if (customSubName.length() == 0)
                 return -1;
-            if (!subName.startsWith("r/"))
-                subName = "r/" + subName;
+            if (!customSubName.startsWith("r/"))
+                customSubName = "r/" + customSubName;
 
-            subName.trim();
+            customSubName.trim();
+
+            for (Sub s : subsList) {
+                if (customSubName.equals(s.subName))
+                    return -2;
+            }
 
             String info;
             JSONObject obj;
             try {
-                String aboutURL = "https://www.reddit.com/" + subName + "/about.json";
+                String aboutURL = "https://www.reddit.com/" + customSubName + "/about.json";
                 URL url = new URL(aboutURL);
                 Scanner scan = new Scanner(url.openStream());
                 info = "";
@@ -438,14 +458,14 @@ public class SubSelector extends AppCompatActivity {
                     info += scan.nextLine();
                 scan.close();
                 obj = new JSONObject(info).getJSONObject("data");
-                System.out.println(aboutURL);
                 if (obj.has("dist")) {
                     // Invalid or empty subreddit
-                    return -2;
+                    return -3;
                 } else {
+                    int customSubID = customSubsMap.size() + 10000;
                     Sub newSub = new Sub(
-                            subName,
-                            customSubsMap.size() + 10000,
+                            customSubName,
+                            customSubID,
                             obj.getInt("subscribers"),
                             true,
                             obj.getBoolean("over18"),
@@ -455,51 +475,51 @@ public class SubSelector extends AppCompatActivity {
                     customSubsMap.put(customSubsMap.size() + 10000, newSub);
                     String serial = gson.toJson(customSubsMap, intSubMap);
                     prefsEditor.putString("CUSTOM_SUBS", serial);
+
+                    selectedCustomSubs.add(customSubID);
+                    prefsEditor.putString("SELECTED_CUSTOM_SUBS", gson.toJson(selectedCustomSubs, hashSetMap));
+
                     prefsEditor.apply();
                     origList.add(newSub);
                     subsList.add(newSub);
+
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             displayList();
-                            for (Sub s : subsList) {
-                                System.out.println(s.subName + " ---- " + s.subID);
-                            }
                         }
                     });
-
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();
-                return -3;
+                return -4;
             }
             return 0;
         }
 
         @Override
         protected void onPostExecute(Integer result) {
+            String msg = null;
             switch (result) {
                 case 0:
-                    Toast.makeText(getApplicationContext(),
-                            "Added " + subName + " sub...",
-                            Toast.LENGTH_LONG).show();
+                    msg = "Added " + customSubName + " sub...";
                     break;
                 case -1:
-                    Toast.makeText(getApplicationContext(),
-                            "Subreddit cannot be blank!",
-                            Toast.LENGTH_LONG).show();
+                    msg = "Subreddit cannot be blank!";
                     break;
                 case -2:
-                    Toast.makeText(getApplicationContext(),
-                            "Subreddit " + subName + " does not exist or is empty",
-                            Toast.LENGTH_LONG).show();
+                    msg = "Subreddit " + customSubName + " has already been added!";
                     break;
                 case -3:
-                    Toast.makeText(getApplicationContext(),
-                            "Error " + subName + " sub...",
-                            Toast.LENGTH_LONG).show();
+                    msg = "Subreddit " + customSubName + " does not exist or is empty";
+                    break;
+                case -4:
+                    msg = "Error " + customSubName + " sub...";
                     break;
             }
+            Toast.makeText(getApplicationContext(),
+                    msg,
+                    Toast.LENGTH_LONG).show();
             progressDialog.dismiss();
         }
 
