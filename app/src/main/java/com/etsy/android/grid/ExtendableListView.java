@@ -213,7 +213,6 @@ public abstract class ExtendableListView extends AbsListView {
         mLayoutMode = LAYOUT_NORMAL;
     }
 
-
     // //////////////////////////////////////////////////////////////////////////////////////////
     // MAINTAINING SOME STATE
     //

@@ -324,16 +324,6 @@ public class SubSelector extends AppCompatActivity {
         });
     }
 
-    public String subscriberCountFormatter(int value) {
-        if (value < 1000) {
-            return value + " ";
-        } else if (value < 1000000) {
-            return Math.round(value / 100) / (1.0 * 10) + "k ";
-        } else {
-            return Math.round(value / 100000) / (1.0 * 10) + "M ";
-        }
-    }
-
     private void buttonPressed() {
         Button back = (Button) findViewById(R.id.updateSelection);
         back.setOnClickListener(new View.OnClickListener() {
@@ -395,7 +385,7 @@ public class SubSelector extends AppCompatActivity {
             holder.name.setChecked((!sb.isCustom && selectedSubs.contains(sb.subID)) || (sb.isCustom && selectedCustomSubs.contains((sb.subID))));
             holder.name.setTag(sb);
             holder.isNSFW.setText(sb.isNSFW ? "NSFW" : "");
-            holder.subscribers.setText(subscriberCountFormatter(sb.subscriberCount));
+            holder.subscribers.setText(Formatter.shortHandFormatter(sb.subscriberCount));
             return convertView;
         }
 

@@ -84,6 +84,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
@@ -127,7 +128,6 @@ public class Main extends AppCompatActivity {
     JSONArray jsonObjs;
     ArrayList<Data> datas = new ArrayList<>();
     ArrayList<Data> favorites = new ArrayList<>();
-    ArrayList<Data> tmp;
     LoadMorePhotos lm;
     boolean loadingMore = true;
     boolean viewingFavorites;
@@ -475,13 +475,12 @@ public class Main extends AppCompatActivity {
             if (viewingFavorites == false) {
                 jsonObjs = new JSONArray();
                 jsonObjs = runner.execute(jsonObjs).get();
-                tmp = addToArry(jsonObjs);
+                addToArry(jsonObjs);
             } else {
-                tmp = gson.fromJson(prefs.getString("FAVORITES", "[]"), dataList);
-                datas = tmp;
+                datas = gson.fromJson(prefs.getString("FAVORITES", "[]"), dataList);
             }
 
-            if (tmp.size() == 0 && viewingFavorites) {
+            if (datas.size() == 0 && viewingFavorites) {
                 final AlertDialog d1;
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
                     d1 = new AlertDialog.Builder(Main.this)
@@ -509,7 +508,7 @@ public class Main extends AppCompatActivity {
                 }
             }
 
-            adapter = new DataAdapter(this, R.layout.staggered, tmp, showNsfw, showTitles);
+            adapter = new DataAdapter(this, R.layout.staggered, datas, showNsfw, showTitles);
             setTitle(Html.fromHtml("<font color='#ffffff'>" + (viewingFavorites ? "Favorites" : appName) + "</font>"));
             staggeredGridView = (StaggeredGridView) findViewById(R.id.gridView);
             staggeredGridView.setAdapter(adapter);
@@ -987,7 +986,7 @@ public class Main extends AppCompatActivity {
         return true;
     }
 
-    public ArrayList<Data> addToArry(JSONArray ja) {
+    public void addToArry(JSONArray ja) {
         if (loadingMore) {
 
             //IMPLEMENT STOP LOADING ONCE ARRAYSIZE < PAGESIZE
@@ -1008,7 +1007,7 @@ public class Main extends AppCompatActivity {
                         data.thumbImgUrl = ja.getJSONObject(i).getString("thumb") + "_" + thumbnail_size + "_" + thumbnail_size + ".jpg";
 
                         // Metadata
-                        data.score = ja.getJSONObject(i).getString("score");
+                        data.score = Formatter.shortHandFormatter(Integer.parseInt(ja.getJSONObject(i).getString("score")));
                         data.nsfw = ja.getJSONObject(i).getBoolean("nsfw");
                         data.redditSrc = ja.getJSONObject(i).getString("externalId");
                         data.title = ja.getJSONObject(i).getString("title").replaceAll("\\s*\\[.+?\\]\\s*", "").replace("&amp;", "&"); //+"\n("+data.score+"\uD83D\uDD3A)";
@@ -1030,53 +1029,53 @@ public class Main extends AppCompatActivity {
                 }
             }
         }
-        return datas;
+        return;
     }
 
-    public ArrayList<Data> addToArryDirect(JSONArray[] jas) {
+    public void addToArryDirect(JSONArray[] jas) {
         if (loadingMore) {
 
             //IMPLEMENT STOP LOADING ONCE ARRAYSIZE < PAGESIZE
-            if (ja == null) {
+            if (jas == null || jas.length == 0) {
                 loadingMore = false;
             } else {
-                if (ja.length() < pageSize) {
-                    pageSize = ja.length();
-                }
-                for (int i = 0; i < pageSize; i++) {
-                    Data data = new Data();
-                    try {
-                        // Image data
-                        data.imgUrl = ja.getJSONObject(i).getString("cdnUrl");
-                        data.width = ja.getJSONObject(i).getInt("width");
-                        data.height = ja.getJSONObject(i).getInt("height");
-                        data.rat = 1.0 * data.height / data.width;
-                        data.thumbImgUrl = ja.getJSONObject(i).getString("thumb") + "_" + thumbnail_size + "_" + thumbnail_size + ".jpg";
+                for (int i = 0; i < jas.length; i++) {
+                    if (jas[i] == null)
+                        continue;
+                    for (int j = 0; j < jas[i].length(); j++) {
+                        try {
+                            JSONObject post = (JSONObject) ((JSONObject) jas[i].get(j)).get("data");
+                            String url = post.getString("url");
+                            if (url.contains(".png") || url.contains(".jpg")) {
+                                Data data = new Data();
+                                data.imgUrl = url;
+                                JSONObject previews = ((JSONObject)((JSONArray)post.getJSONObject("preview").getJSONArray("images")).get(0));
+                                JSONArray resolutions = previews.getJSONArray("resolutions");
+                                JSONObject preview = ((JSONObject)resolutions.get(resolutions.length()/2));
+                                data.width = preview.getInt("width");
+                                data.height = preview.getInt("height");
+                                data.rat = 1.0 * data.height / data.width;
+                                data.thumbImgUrl = preview.getString("url").replace("&amp;","&");
 
-                        // Metadata
-                        data.score = ja.getJSONObject(i).getString("score");
-                        data.nsfw = ja.getJSONObject(i).getBoolean("nsfw");
-                        data.redditSrc = ja.getJSONObject(i).getString("externalId");
-                        data.title = ja.getJSONObject(i).getString("title").replaceAll("\\s*\\[.+?\\]\\s*", "").replace("&amp;", "&"); //+"\n("+data.score+"\uD83D\uDD3A)";
-                        data.series = ja.getJSONObject(i).getString("title").replaceAll("^[^\\[]*", "").replace("&amp;", "&");
+                                data.score = Formatter.shortHandFormatter(Integer.parseInt(post.getString("score")));
+                                data.nsfw = post.getBoolean("over_18");
+                                data.redditSrc = post.getString("permalink");
+//                                data.title = post.getString("title").replaceAll("\\s*\\[.+?\\]\\s*", "").replace("&amp;", "&"); //+"\n("+data.score+"\uD83D\uDD3A)";
+                                data.title = post.getString("subreddit_name_prefixed");
+                                data.series = data.title.replaceAll("^[^\\[]*", "").replace("&amp;", "&");
 
-                        if (i == pageSize - 1) {
-                            lastIndexTime = Long.parseLong(ja.getJSONObject(i).getString("dateCreated"));
+                                datas.add(data);
+                            } else {
+
+                            }
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
                     }
-                    if (data.ogSrc.equals("null")) {
-                        data.ogSrc = "";
-                    }
-                    if (data.thumbImgUrl.equals("null")) {
-                        data.thumbImgUrl = "";
-                    }
-                    datas.add(data);
                 }
             }
         }
-        return datas;
+        return;
     }
 
     private class UpdateIndex extends AsyncTask<Void, Integer, Void> {
@@ -1286,6 +1285,7 @@ public class Main extends AppCompatActivity {
             }
 
             // Custom subs: from Reddit directly
+            int ix = 0;
             for (int i : selectedCustomSubs) {
                 try {
                     System.out.println(customSubsMap.get(i).subName);
@@ -1300,8 +1300,8 @@ public class Main extends AppCompatActivity {
                         posts += scan.nextLine();
                     scan.close();
                     JSONObject obj = new JSONObject(posts).getJSONObject("data");
-                    customTmp[i] = obj.getJSONArray("children");
-
+                    customTmp[ix] = obj.getJSONArray("children");
+                    ix++;
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -1321,16 +1321,16 @@ public class Main extends AppCompatActivity {
 
             // APPEND NEW DATA TO THE ARRAYLIST AND SET THE ADAPTER TO THE
             // LISTVIEW
-            // Initialize with normal data
-            datas = addToArry(tmp);
-            // Append custom subs data
-            datas.addAll(addToArryDirect(customTmp));
 
-            String test = tmp.toString();
+            // Initialize with normal data
+            addToArry(tmp);
+
+            // Append custom subs data
+            if (selectedCustomSubs.size() != 0)
+                addToArryDirect(customTmp);
 
             adapter.datas = datas;
             adapter.notifyDataSetChanged();
-
 
             // SET LOADINGMORE "FALSE" AFTER ADDING NEW FEEDS TO THE EXISTING
             // LIST
