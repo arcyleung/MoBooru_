@@ -34,6 +34,7 @@ import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -255,6 +256,8 @@ public class Main extends AppCompatActivity {
             }
             if (prefs.getBoolean("FULLSCREEN", false)) {
                 immersiveFullscreen();
+            } else {
+                nonFullscreen();
             }
 
             // Show titles to true by default
@@ -330,6 +333,8 @@ public class Main extends AppCompatActivity {
                                                           public void onDismiss(DialogInterface dialogInterface) {
                                                               if (prefs.getBoolean("FULLSCREEN", false)) {
                                                                   immersiveFullscreen();
+                                                              } else {
+                                                                  nonFullscreen();
                                                               }
                                                           }
                                                       }
@@ -525,11 +530,7 @@ public class Main extends AppCompatActivity {
                 adapter.datas = datas;
                 adapter.notifyDataSetChanged();
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                staggeredGridView.setNestedScrollingEnabled(true);
-            }
         } catch (Exception e) {
-            System.out.println("CRASHED");
             e.printStackTrace();
         }
     }
@@ -552,9 +553,14 @@ public class Main extends AppCompatActivity {
         super.onDestroy();
     }
 
+    public void nonFullscreen() {
+        getWindow().getDecorView().setSystemUiVisibility(0);
+    }
+
     public void immersiveFullscreen() {
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                         | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                         | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
@@ -598,6 +604,8 @@ public class Main extends AppCompatActivity {
                             public void onCancel(DialogInterface dialog) {
                                 if (prefs.getBoolean("FULLSCREEN", false)) {
                                     immersiveFullscreen();
+                                } else {
+                                    nonFullscreen();
                                 }
                             }
                         });
@@ -619,7 +627,6 @@ public class Main extends AppCompatActivity {
                                     dialog.getWindow().setLayout(screenWidth, screenHeight);
                                     dialog.getWindow().setDimAmount(.9f);
                                     dialog.show();
-                                    immersiveFullscreen();
 
                                     close = (FloatingActionButton) dialog.findViewById(R.id.imageClose);
                                     fab = (FloatingActionButton) dialog.findViewById(R.id.fab);
@@ -674,10 +681,10 @@ public class Main extends AppCompatActivity {
                                     fab1.setOnClickListener(new View.OnClickListener() {
                                         @Override
                                         public void onClick(View view) {
-                                            new AlertDialog.Builder(Main.this)
+                                            Dialog d = new AlertDialog.Builder(Main.this)
                                                     .setTitle("Confirm")
                                                     .setMessage("Do you want to set this wallpaper?")
-                                                    .setIcon(android.R.drawable.ic_dialog_alert)
+                                                    .setIcon(getDrawable(R.drawable.ic_wallpaper_white_48dp))
                                                     .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
 
                                                         public void onClick(DialogInterface dialog, int whichButton) {
@@ -718,6 +725,9 @@ public class Main extends AppCompatActivity {
                                                         }
                                                     })
                                                     .setNegativeButton(android.R.string.no, null).show();
+                                            d.getWindow().setDimAmount(.6f);
+                                            dialog.getWindow().setDimAmount(.8f);
+                                            d.show();
                                         }
                                     });
 
@@ -803,7 +813,6 @@ public class Main extends AppCompatActivity {
                                                 String serial = gson.toJson(datas, dataList);
                                                 prefsEditor.putString("FAVORITES", serial);
                                                 prefsEditor.apply();
-                                                System.out.println(serial);
                                                 adapter.notifyDataSetChanged();
                                                 dialog.dismiss();
                                                 if (datas.size() == 0) {
@@ -825,6 +834,8 @@ public class Main extends AppCompatActivity {
                                             dialog.dismiss();
                                             if (prefs.getBoolean("FULLSCREEN", false)) {
                                                 immersiveFullscreen();
+                                            } else {
+                                                nonFullscreen();
                                             }
                                         }
                                     });
@@ -1195,7 +1206,7 @@ public class Main extends AppCompatActivity {
         }
     }
 
-    private class LoadJSONasyncInit extends AsyncTask<JSONArray, Void, JSONArray> {
+    private class LoadJSONasyncInit extends AsyncTask<JSONArray, Void, JSONArray>    {
 
         protected JSONArray doInBackground(JSONArray... urls) {
             try {
@@ -1288,7 +1299,6 @@ public class Main extends AppCompatActivity {
             int ix = 0;
             for (int i : selectedCustomSubs) {
                 try {
-                    System.out.println(customSubsMap.get(i).subName);
                     String jsonURL = "https://www.reddit.com/" + customSubsMap.get(i).subName + "/.json";
                     if (nextPages.containsKey(i)) {
                         jsonURL += "?after="+nextPages.get(i);
@@ -1301,6 +1311,7 @@ public class Main extends AppCompatActivity {
                     scan.close();
                     JSONObject obj = new JSONObject(posts).getJSONObject("data");
                     customTmp[ix] = obj.getJSONArray("children");
+                    nextPages.put(i, obj.getString("after"));
                     ix++;
                 } catch (Exception e) {
                     e.printStackTrace();

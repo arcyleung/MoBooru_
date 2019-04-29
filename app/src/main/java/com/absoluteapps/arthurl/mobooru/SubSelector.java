@@ -212,10 +212,10 @@ public class SubSelector extends AppCompatActivity {
     }
 
     public void onBackPressed() {
-        finish();
-        overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
+//        overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
         startActivity(new Intent(this, Main.class));
-        overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
+//        overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
+        finish();
     }
 
     private void displayList() {
@@ -301,24 +301,49 @@ public class SubSelector extends AppCompatActivity {
 
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                Sub sub = (Sub) parent.getItemAtPosition(position);
-                if (sub.desc.length() > 0) {
-                    final AlertDialog d1 = new AlertDialog.Builder(new ContextThemeWrapper(SubSelector.this, R.style.AppTheme))
-                            .setTitle("About " + sub.subName + ":")
-                            .setNegativeButton("Back", new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int which) {
-                                    // do nothing
-                                }
-                            })
-                            .setMessage(sub.desc)
-                            .create();
+                final Sub sub = (Sub) parent.getItemAtPosition(position);
+                    final AlertDialog d1;
+                    if (sub.isCustom) {
+                        d1 = new AlertDialog.Builder(new ContextThemeWrapper(SubSelector.this, R.style.AppTheme))
+                                .setTitle("About " + sub.subName + ":")
+                                .setNegativeButton("Back", new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        // Do nothing
+                                    }
+                                })
+                                .setNeutralButton("Delete", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                        customSubsMap.remove(sub.subID);
+                                        String serial = gson.toJson(customSubsMap, intSubMap);
+                                        prefsEditor.putString("CUSTOM_SUBS", serial);
 
+                                        selectedCustomSubs.remove(sub.subID);
+                                        prefsEditor.putString("SELECTED_CUSTOM_SUBS", gson.toJson(selectedCustomSubs, hashSetMap));
+
+                                        prefsEditor.apply();
+                                        origList.remove(sub);
+                                        subsList.remove(sub);
+
+                                        adp.notifyDataSetChanged();
+
+                                        Toast.makeText(SubSelector.this, "Removed " + sub.subName, Toast.LENGTH_SHORT).show();
+                                    }
+                                })
+                                .setMessage(sub.desc.length() > 0 ? sub.desc : "No description")
+                                .create();
+                    } else {
+                        d1 = new AlertDialog.Builder(new ContextThemeWrapper(SubSelector.this, R.style.AppTheme))
+                                .setTitle("About " + sub.subName + ":")
+                                .setNegativeButton("Back", new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        // Do nothing
+                                    }
+                                })
+                                .setMessage(sub.desc.length() > 0 ? sub.desc : "No description")
+                                .create();
+                    }
                     d1.show();
-                } else {
-                    Toast.makeText(getApplicationContext(),
-                            "No description found...",
-                            Toast.LENGTH_LONG).show();
-                }
                 return true;
             }
         });
@@ -433,6 +458,11 @@ public class SubSelector extends AppCompatActivity {
             customSubName.trim();
 
             for (Sub s : subsList) {
+                if (customSubName.equals(s.subName))
+                    return -2;
+            }
+
+            for (Sub s : customSubsMap.values()) {
                 if (customSubName.equals(s.subName))
                     return -2;
             }

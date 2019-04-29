@@ -2,7 +2,7 @@
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar" tools:targetApi="lollipop">
-        <item name="colorPrimaryDark">#FFFFFF</item>
+        <item name="colorPrimaryDark">#434343</item>
         <item name="colorPrimary">#434343</item>
         <item name="colorAccent">#ff0066</item>
         <item name="colorControlNormal">#ff0066</item>
@@ -10,12 +10,11 @@
         <item name="colorControlHighlight">#ff0066</item>
         <item name="colorButtonNormal">#434343</item>
         <item name="colorSwitchThumbNormal">#434343</item>
-        <item name="android:windowFullscreen">true</item>
     </style>
 
-    <style name="AppTheme.Toolbar" parent="Theme.AppCompat.DayNight.DarkActionBar" tools:targetApi="lollipop">
-        <item name="colorPrimaryDark">#FFFFFF</item>
-        <item name="colorPrimary">#434343</item>
+    <style name="AppTheme.Toolbar" parent="Theme.AppCompat.Light.NoActionBar" tools:targetApi="lollipop">
+        <item name="colorPrimaryDark">#434343</item>
+        <item name="colorPrimary">#FFFFFF</item>
         <item name="colorAccent">#ff0066</item>
     </style>
 

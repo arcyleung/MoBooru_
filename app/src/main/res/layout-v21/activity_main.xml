@@ -28,7 +28,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="?attr/actionBarSize"
                     android:background="?attr/colorPrimary"
-                    app:layout_scrollFlags="scroll|enterAlways|snap"
+                    app:layout_scrollFlags="scroll|enterAlways"
                     app:popupTheme="@style/Base.ThemeOverlay.AppCompat.Light" />
 
             </android.support.design.widget.AppBarLayout>
@@ -36,8 +36,7 @@
             <android.support.v4.widget.SwipeRefreshLayout
                 android:id="@+id/swipe_container"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:layout_behavior="@string/appbar_scrolling_view_behavior">
+                android:layout_height="match_parent">
 
                 <com.etsy.android.grid.StaggeredGridView
                     android:id="@+id/gridView"
@@ -51,12 +50,9 @@
                     android:columnWidth="90dp"
                     android:gravity="center"
                     android:horizontalSpacing="1dp"
-                    android:nestedScrollingEnabled="true"
                     android:numColumns="auto_fit"
                     android:stretchMode="columnWidth"
-                    android:verticalSpacing="1dp"
-                    app:layout_behavior="@string/appbar_scrolling_view_behavior"
-                    app:layout_scrollFlags="scroll|enterAlways"></com.etsy.android.grid.StaggeredGridView>
+                    android:verticalSpacing="1dp"></com.etsy.android.grid.StaggeredGridView>
 
             </android.support.v4.widget.SwipeRefreshLayout>
 

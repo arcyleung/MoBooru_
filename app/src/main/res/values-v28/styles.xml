@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimaryDark">#434343</item>
+        <item name="colorPrimary">#434343</item>
+        <item name="colorAccent">#ff0066</item>
+        <item name="colorControlNormal">#ff0066</item>
+        <item name="colorControlActivated">#ff0066</item>
+        <item name="colorControlHighlight">#ff0066</item>
+        <item name="colorButtonNormal">#434343</item>
+        <item name="colorSwitchThumbNormal">#434343</item>
+        <item name="android:statusBarColor">#434343</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">
+            shortEdges
+        </item>
+    </style>
+
+    <style name="Splash" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">
+            shortEdges
+        </item>
+    </style>
+</resources>
