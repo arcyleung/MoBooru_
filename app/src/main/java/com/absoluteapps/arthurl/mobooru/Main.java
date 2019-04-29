@@ -988,6 +988,7 @@ public class Main extends AppCompatActivity {
                 prefsEditor.putBoolean("SHOW_TITLES", !prefs.getBoolean("SHOW_TITLES", true));
                 prefsEditor.apply();
                 Intent intent = getIntent();
+
                 finish();
                 overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
                 startActivity(intent);
@@ -1195,6 +1196,7 @@ public class Main extends AppCompatActivity {
                     throw new RuntimeException(
                             "Canvas: trying to draw too large(" + bitmapSize + "bytes) bitmap.");
                 }
+
             } catch (Exception e) {
                 e.printStackTrace();
             }

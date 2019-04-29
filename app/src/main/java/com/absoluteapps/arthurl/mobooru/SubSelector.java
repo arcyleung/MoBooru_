@@ -114,7 +114,7 @@ public class SubSelector extends AppCompatActivity {
                                 // do nothing
                             }
                         })
-                        .setIcon(android.R.drawable.ic_menu_info_details)
+                        .setIcon(R.drawable.baseline_help_outline_black_36)
                         .setMessage("Check the subreddits you'd like to see pictures from; press and hold each subreddit to see its description!")
                         .create();
 
