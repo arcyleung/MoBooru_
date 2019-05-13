@@ -212,9 +212,9 @@ public class SubSelector extends AppCompatActivity {
     }
 
     public void onBackPressed() {
-//        overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
+        overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
         startActivity(new Intent(this, Main.class));
-//        overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
+        overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
         finish();
     }
 

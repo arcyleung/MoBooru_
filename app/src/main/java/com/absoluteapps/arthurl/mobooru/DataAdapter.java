@@ -1,6 +1,7 @@
 package com.absoluteapps.arthurl.mobooru;
 
 import android.app.Activity;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -58,7 +59,8 @@ public class DataAdapter extends ArrayAdapter<Data> {
         final Data data = datas.get(position);
 
         holder.title.setText(data.title.length() > 35 ? data.title.substring(0, 30) + "..." : data.title);
-        holder.score.setText(data.score + "🔺");
+        holder.score.setText(data.score);
+        holder.score.setTypeface(null, Typeface.BOLD_ITALIC);
         if (data.ogSrc == null) {
             holder.description.setText("");
         } else {

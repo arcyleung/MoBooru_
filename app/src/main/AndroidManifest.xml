@@ -6,38 +6,39 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.SET_WALLPAPER"/>
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
 
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar"
-        android:largeHeap = "true">
-
+        android:largeHeap="true"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
         <activity
-            android:name="com.absoluteapps.arthurl.mobooru.Splash"
-            android:theme="@style/Splash"
-            android:screenOrientation="portrait"
+            android:name=".Help"
+            android:label="@string/title_activity_help"
+            android:theme="@style/NoActionBar"></activity>
+        <activity
+            android:name=".Splash"
             android:configChanges="keyboardHidden|orientation|screenSize"
-            >
+            android:screenOrientation="portrait"
+            android:theme="@style/Splash">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
-            android:name="com.absoluteapps.arthurl.mobooru.Main"
+            android:name=".Main"
             android:label="@string/app_name"
-            android:theme="@style/AppTheme"
             android:launchMode="singleTop"
             android:screenOrientation="portrait"
-            />
+            android:theme="@style/AppTheme" />
         <activity
-            android:name="com.absoluteapps.arthurl.mobooru.SubSelector"
-            android:theme="@style/AppTheme"
-            android:label="@string/title_activity_settings_subs"></activity>
+            android:name=".SubSelector"
+            android:label="@string/title_activity_settings_subs"
+            android:theme="@style/AppTheme" />
     </application>
 
 </manifest>

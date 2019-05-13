@@ -12,9 +12,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
@@ -125,7 +127,6 @@ public class Main extends AppCompatActivity {
     Elements redditSubs;
     String subsJSON = "";
     JSONArray arr;
-    LoadJSONasyncInit runner;
     JSONArray jsonObjs;
     ArrayList<Data> datas = new ArrayList<>();
     ArrayList<Data> favorites = new ArrayList<>();
@@ -167,19 +168,8 @@ public class Main extends AppCompatActivity {
     SharedPreferences prefs;
     SharedPreferences.Editor prefsEditor;
     File externalStorageDirectory = Environment.getExternalStorageDirectory();
-    private DataAdapter adapter;
     Bitmap currentImg;
-
-    private static Point getDisplaySize(final Display display) {
-        final Point point = new Point();
-        try {
-            display.getSize(point);
-        } catch (java.lang.NoSuchMethodError ignore) { // Legacy support
-            point.x = display.getWidth();
-            point.y = display.getHeight();
-        }
-        return point;
-    }
+    private DataAdapter adapter;
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB) // API 11
     public static <T> void executeAsyncTask(AsyncTask<T, ?, ?> asyncTask, T... params) {
@@ -301,7 +291,10 @@ public class Main extends AppCompatActivity {
                                     Toast.LENGTH_LONG).show();
                         }
                         return true;
-//                        drawerLayout.closeDrawers();
+
+                    case R.id.nav_back:
+                        restartMain(false);
+                        return true;
 
                     case R.id.nav_favorites:
                         if (!timeToUpdate) {
@@ -313,38 +306,6 @@ public class Main extends AppCompatActivity {
                         }
                         return true;
 
-                    case R.id.nav_back:
-                        restartMain(false);
-                        return true;
-
-                    case R.id.nav_about:
-                        final AlertDialog d1 = new AlertDialog.Builder(Main.this)
-                                .setTitle("About")
-                                .setNegativeButton("Back", new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        // do nothing
-                                    }
-                                })
-                                .setIcon(R.drawable.ic_launcher)
-                                .setMessage(Html.fromHtml(appName + " v" + verString + "<br>Author: arcyleung<br/><a href=\"http://arcyleung.com\">http://arcyleung.com</a><br/><br/>Follow me on <a href=\"https://twitter.com/arcyleung\">Twitter</a> or <a href=\"https://www.linkedin.com/in/arcyleung/\">LinkedIn</a>! <br/> <br/> Please direct any questions about development to <a href=\"mailto:arcyleung@gmail.com?Subject=MoBooru Inquiry\" target=\"_top\">arcyleung@gmail.com</a>\n" +
-                                        "</p> or if you want to help support development!"))
-                                .setOnDismissListener(new DialogInterface.OnDismissListener() {
-                                                          @Override
-                                                          public void onDismiss(DialogInterface dialogInterface) {
-                                                              if (prefs.getBoolean("FULLSCREEN", false)) {
-                                                                  immersiveFullscreen();
-                                                              } else {
-                                                                  nonFullscreen();
-                                                              }
-                                                          }
-                                                      }
-                                )
-                                .create();
-
-                        d1.show();
-
-                        ((TextView) d1.findViewById(android.R.id.message)).setMovementMethod(LinkMovementMethod.getInstance());
-                        return true;
                     case R.id.columns:
                         final Display display = ((WindowManager) Main.this.getSystemService(getApplicationContext().WINDOW_SERVICE)).getDefaultDisplay();
                         final AlertDialog.Builder d2 = new AlertDialog.Builder(Main.this);
@@ -401,17 +362,49 @@ public class Main extends AppCompatActivity {
                         alertDialog.show();
 
                         return true;
+
+                    case R.id.nav_help:
+                        overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
+                        startActivity(new Intent(getApplicationContext(), Help.class));
+                        overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
+                        return true;
+
+                    case R.id.nav_about:
+                        final AlertDialog d1 = new AlertDialog.Builder(Main.this)
+                                .setTitle("About")
+                                .setNegativeButton("Back", new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        // do nothing
+                                    }
+                                })
+                                .setIcon(R.drawable.ic_launcher)
+                                .setMessage(Html.fromHtml(appName + " v" + verString + "<br>Author: arcyleung<br/><a href=\"http://arcyleung.com\">http://arcyleung.com</a><br/><br/>Follow me on <a href=\"https://twitter.com/arcyleung\">Twitter</a> or <a href=\"https://www.linkedin.com/in/arcyleung/\">LinkedIn</a>! <br/> <br/> Please direct any questions about development to <a href=\"mailto:arcyleung@gmail.com?Subject=MoBooru Inquiry\" target=\"_top\">arcyleung@gmail.com</a>\n" +
+                                        "</p> or if you want to help support development!"))
+                                .setOnDismissListener(new DialogInterface.OnDismissListener() {
+                                                          @Override
+                                                          public void onDismiss(DialogInterface dialogInterface) {
+                                                              if (prefs.getBoolean("FULLSCREEN", false)) {
+                                                                  immersiveFullscreen();
+                                                              } else {
+                                                                  nonFullscreen();
+                                                              }
+                                                          }
+                                                      }
+                                )
+                                .create();
+
+                        d1.show();
+
+                        ((TextView) d1.findViewById(android.R.id.message)).setMovementMethod(LinkMovementMethod.getInstance());
+                        return true;
                 }
                 return false;
             }
         });
-
+//
         display = getWindowManager().getDefaultDisplay();
-        screenWidth = getDisplaySize(display).x;
-        screenHeight = getDisplaySize(display).y;
 
         selectedURL = "https://redditbooru.com/images/?sources=" + selectedString;
-        runner = new LoadJSONasyncInit();
 
         if (!isNetworkAvailable()) {
             final AlertDialog d = new AlertDialog.Builder(Main.this)
@@ -464,6 +457,7 @@ public class Main extends AppCompatActivity {
         }
 
         if (timeToUpdate) {
+            new FetchSubs().execute();
             Toast.makeText(getApplicationContext(),
                     "Updating subreddit index...",
                     Toast.LENGTH_LONG).show();
@@ -471,54 +465,22 @@ public class Main extends AppCompatActivity {
 
         Main.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
 
+        calcScreenSize();
         StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
         StrictMode.setVmPolicy(builder.build());
     }
 
     public void initializeAdapter() {
         try {
-            if (viewingFavorites == false) {
-                jsonObjs = new JSONArray();
-                jsonObjs = runner.execute(jsonObjs).get();
-                addToArry(jsonObjs);
-            } else {
-                datas = gson.fromJson(prefs.getString("FAVORITES", "[]"), dataList);
-            }
-
-            if (datas.size() == 0 && viewingFavorites) {
-                final AlertDialog d1;
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                    d1 = new AlertDialog.Builder(Main.this)
-                            .setTitle("Favorites")
-                            .setNegativeButton("Back", new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int which) {
-                                    // do nothing
-                                }
-                            })
-                            .setMessage("You have not added any favorites yet. To add a favorite, press the heart button when viewing an image!")
-                            .setOnDismissListener(new DialogInterface.OnDismissListener() {
-                                                      @Override
-                                                      public void onDismiss(DialogInterface dialogInterface) {
-                                                          restartMain(false);
-                                                      }
-                                                  }
-                            )
-                            .create();
-
-                    d1.show();
-                } else {
-                    Toast.makeText(getApplicationContext(),
-                            "You have not added any favorites yet.",
-                            Toast.LENGTH_LONG).show();
-                }
-            }
-
             adapter = new DataAdapter(this, R.layout.staggered, datas, showNsfw, showTitles);
             setTitle(Html.fromHtml("<font color='#ffffff'>" + (viewingFavorites ? "Favorites" : appName) + "</font>"));
             staggeredGridView = (StaggeredGridView) findViewById(R.id.gridView);
             staggeredGridView.setAdapter(adapter);
 
             if (viewingFavorites == false) {
+
+                lm = new LoadMorePhotos();
+                lm.execute();
                 staggeredGridView.setOnScrollListener(new EndlessScrollListener() {
                     @Override
                     public void onLoadMore(int page, int totalItemsCount) {
@@ -527,13 +489,48 @@ public class Main extends AppCompatActivity {
                     }
                 });
             } else {
-                adapter.datas = datas;
-                adapter.notifyDataSetChanged();
+                datas = gson.fromJson(prefs.getString("FAVORITES", "[]"), dataList);
+                if (datas.size() == 0) {
+                    final AlertDialog d1;
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                        d1 = new AlertDialog.Builder(Main.this)
+                                .setTitle("Favorites")
+                                .setNegativeButton("Back", new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        // do nothing
+                                    }
+                                })
+                                .setMessage("You have not added any favorites yet. To add a favorite, press the heart button when viewing an image!")
+                                .setOnDismissListener(new DialogInterface.OnDismissListener() {
+                                                          @Override
+                                                          public void onDismiss(DialogInterface dialogInterface) {
+                                                              restartMain(false);
+                                                          }
+                                                      }
+                                )
+                                .create();
+
+                        d1.show();
+                    } else {
+                        Toast.makeText(getApplicationContext(),
+                                "You have not added any favorites yet.",
+                                Toast.LENGTH_LONG).show();
+                    }
+                } else {
+                    adapter = new DataAdapter(this, R.layout.staggered, datas, showNsfw, showTitles);
+                    staggeredGridView.setAdapter(adapter);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+    }
+
 
     @Override
     protected void onPause() {
@@ -551,6 +548,26 @@ public class Main extends AppCompatActivity {
         if (progressDialog != null)
             progressDialog.dismiss();
         super.onDestroy();
+    }
+
+    public void calcScreenSize() {
+        Point outPoint = new Point();
+        if (Build.VERSION.SDK_INT >= 19) {
+            // include navigation bar
+            display.getRealSize(outPoint);
+        } else {
+            // exclude navigation bar
+            display.getSize(outPoint);
+        }
+        Resources res = Main.this.getResources();
+        int resourceId = Main.this.getResources().getIdentifier("status_bar_height", "dimen", "android");
+
+        screenHeight = outPoint.y;
+        screenWidth = outPoint.x;
+
+
+        if (resourceId > 0)
+            screenHeight -= res.getDimensionPixelSize(resourceId);
     }
 
     public void nonFullscreen() {
@@ -725,7 +742,7 @@ public class Main extends AppCompatActivity {
                                                         }
                                                     })
                                                     .setNegativeButton(android.R.string.no, null).show();
-                                            d.getWindow().setDimAmount(.6f);
+                                            d.getWindow().setDimAmount(.8f);
                                             dialog.getWindow().setDimAmount(.8f);
                                             d.show();
                                         }
@@ -733,18 +750,40 @@ public class Main extends AppCompatActivity {
 
                                     fab2.setOnClickListener(new View.OnClickListener() {
                                         public void onClick(View view) {
-                                            // Perms
-                                            if (Build.VERSION.SDK_INT >= 23) {
-                                                if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                                                        == PackageManager.PERMISSION_GRANTED) {
-                                                    shareWallpaperExtStorage(finalImg);
-                                                } else {
-                                                    currentImg = finalImg;
-                                                    ActivityCompat.requestPermissions(Main.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 2);
-                                                }
-                                            } else {
-                                                shareWallpaperExtStorage(finalImg);
-                                            }
+                                            String[] options = {"Share image", "Share image link", "Share Reddit link"};
+                                            Dialog d = new AlertDialog.Builder(Main.this)
+                                                    .setTitle("Share")
+                                                    .setItems(options, new DialogInterface.OnClickListener() {
+                                                        @Override
+                                                        public void onClick(DialogInterface dialog, int which) {
+                                                            switch (which) {
+                                                                case 0:
+                                                                    // Perms
+                                                                    if (Build.VERSION.SDK_INT >= 23) {
+                                                                        if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                                                                                == PackageManager.PERMISSION_GRANTED) {
+                                                                            shareWallpaperExtStorage(finalImg);
+                                                                        } else {
+                                                                            currentImg = finalImg;
+                                                                            ActivityCompat.requestPermissions(Main.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 2);
+                                                                        }
+                                                                    } else {
+                                                                        shareWallpaperExtStorage(finalImg);
+                                                                    }
+                                                                    break;
+                                                                case 1:
+                                                                    shareWallpaperLink(selected.imgUrl);
+                                                                    break;
+                                                                case 2:
+                                                                    shareWallpaperLink(selected.redditSrc);
+                                                                    break;
+                                                                default:
+                                                            }
+                                                        }
+                                                    })
+                                                    .create();
+                                            d.getWindow().setDimAmount(.8f);
+                                            d.show();
                                         }
                                     });
 
@@ -772,7 +811,7 @@ public class Main extends AppCompatActivity {
                                                 Intent redditPost = new Intent(Intent.ACTION_VIEW);
 
                                                 // Type of file to share
-                                                redditPost.setData(Uri.parse("https://redd.it/" + selected.redditSrc));
+                                                redditPost.setData(Uri.parse(selected.redditSrc));
                                                 startActivity(redditPost);
 
                                             } catch (Exception e) {
@@ -1021,7 +1060,7 @@ public class Main extends AppCompatActivity {
                         // Metadata
                         data.score = Formatter.shortHandFormatter(Integer.parseInt(ja.getJSONObject(i).getString("score")));
                         data.nsfw = ja.getJSONObject(i).getBoolean("nsfw");
-                        data.redditSrc = ja.getJSONObject(i).getString("externalId");
+                        data.redditSrc = "https://redd.it/" + ja.getJSONObject(i).getString("externalId");
                         data.title = ja.getJSONObject(i).getString("title").replaceAll("\\s*\\[.+?\\]\\s*", "").replace("&amp;", "&"); //+"\n("+data.score+"\uD83D\uDD3A)";
                         data.series = ja.getJSONObject(i).getString("title").replaceAll("^[^\\[]*", "").replace("&amp;", "&");
 
@@ -1061,17 +1100,17 @@ public class Main extends AppCompatActivity {
                             if (url.contains(".png") || url.contains(".jpg")) {
                                 Data data = new Data();
                                 data.imgUrl = url;
-                                JSONObject previews = ((JSONObject)((JSONArray)post.getJSONObject("preview").getJSONArray("images")).get(0));
+                                JSONObject previews = ((JSONObject) ((JSONArray) post.getJSONObject("preview").getJSONArray("images")).get(0));
                                 JSONArray resolutions = previews.getJSONArray("resolutions");
-                                JSONObject preview = ((JSONObject)resolutions.get(resolutions.length()/2));
+                                JSONObject preview = ((JSONObject) resolutions.get(resolutions.length() / 2));
                                 data.width = preview.getInt("width");
                                 data.height = preview.getInt("height");
                                 data.rat = 1.0 * data.height / data.width;
-                                data.thumbImgUrl = preview.getString("url").replace("&amp;","&");
+                                data.thumbImgUrl = preview.getString("url").replace("&amp;", "&");
 
                                 data.score = Formatter.shortHandFormatter(Integer.parseInt(post.getString("score")));
                                 data.nsfw = post.getBoolean("over_18");
-                                data.redditSrc = post.getString("permalink");
+                                data.redditSrc = "https://reddit.com" + post.getString("permalink");
 //                                data.title = post.getString("title").replaceAll("\\s*\\[.+?\\]\\s*", "").replace("&amp;", "&"); //+"\n("+data.score+"\uD83D\uDD3A)";
                                 data.title = post.getString("subreddit_name_prefixed");
                                 data.series = data.title.replaceAll("^[^\\[]*", "").replace("&amp;", "&");
@@ -1088,6 +1127,168 @@ public class Main extends AppCompatActivity {
             }
         }
         return;
+    }
+
+    public void writeWallpaperExtStorage(Bitmap finalImg) {
+        Long time = System.nanoTime();
+
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.TITLE, Long.toString(time));
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, Long.toString(time));
+        values.put(MediaStore.Images.Media.DESCRIPTION, "");
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+        values.put(MediaStore.Images.Media.DATE_ADDED, time);
+        values.put(MediaStore.Images.Media.DATE_TAKEN, time);
+
+        Uri uri = null;
+
+        try {
+            uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+
+            if (finalImg != null) {
+                fixMediaDir();
+                OutputStream imageOut = getContentResolver().openOutputStream(uri);
+
+                try {
+                    finalImg.compress(Bitmap.CompressFormat.JPEG, 100, imageOut);
+                } finally {
+                    imageOut.close();
+                }
+
+                Toast.makeText(getApplicationContext(),
+                        "Saved image " + Long.toString(time) + " to gallery",
+                        Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(getApplicationContext(),
+                        "Failed to save image " + Long.toString(time) + " to gallery",
+                        Toast.LENGTH_LONG).show();
+                getContentResolver().delete(uri, null, null);
+                uri = null;
+            }
+        } catch (Exception e) {
+            Toast.makeText(getApplicationContext(),
+                    "Failed to save image " + Long.toString(time) + " to gallery",
+                    Toast.LENGTH_LONG).show();
+            if (uri != null) {
+                getContentResolver().delete(uri, null, null);
+                uri = null;
+            }
+        }
+    }
+
+    public void shareWallpaperLink(String url) {
+        Intent share = new Intent(android.content.Intent.ACTION_SEND);
+        share.setType("text/plain");
+        share.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+
+        share.putExtra(Intent.EXTRA_TEXT, url);
+
+        startActivity(Intent.createChooser(share, "Share link"));
+    }
+
+    public void shareWallpaperExtStorage(Bitmap finalImg) {
+        // Create a new folder AndroidBegin in SD Card
+        File dir = new File(externalStorageDirectory.getAbsolutePath() + "/MoBooru/");
+        dir.mkdirs();
+
+        // Create a name for the saved image
+        File file = new File(dir, "tmp.png");
+        Bitmap bitmap = finalImg;
+        OutputStream output;
+
+        try {
+            // Share Intent
+            Intent share = new Intent(Intent.ACTION_SEND);
+
+            // Type of file to share
+            share.setType("image/jpeg");
+
+            output = new FileOutputStream(file);
+
+            // Compress into png format image from 0% - 100%
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output);
+            output.flush();
+            output.close();
+
+            // Locate the image to Share
+            Uri uri = Uri.fromFile(file);
+
+            // Pass the image into an intent
+            share.putExtra(Intent.EXTRA_STREAM, uri);
+
+            // Show the social share chooser list
+            startActivity(Intent.createChooser(share, "Share image"));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(getApplicationContext(),
+                    "Failed to share image, please check storage permissions",
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case 1:
+                if ((grantResults.length > 0) && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    writeWallpaperExtStorage(currentImg);
+                } else {
+                    Toast.makeText(getApplicationContext(),
+                            "Permission to save images was not granted",
+                            Toast.LENGTH_LONG).show();
+                }
+                break;
+            case 2:
+                if ((grantResults.length > 0) && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    shareWallpaperExtStorage(currentImg);
+                } else {
+                    Toast.makeText(getApplicationContext(),
+                            "Permission to share/ save images was not granted",
+                            Toast.LENGTH_LONG).show();
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    private class FetchSubs extends AsyncTask<Void, Void, Void> {
+
+        protected Void doInBackground(Void... params) {
+            try {
+                // Fetch subs list
+                doc = Jsoup.connect(mainsite)
+                        .header("Accept-Encoding", "gzip, deflate")
+                        .userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0")
+                        .maxBodySize(0)
+                        .timeout(6000000)
+                        .get();
+                redditSubs = doc.select("script");
+                int i = 0;
+                for (Element sub : redditSubs) {
+                    String at = sub.toString();
+                    if (i == 2) {
+                        subsJSON = at;
+                    }
+                    i++;
+                }
+
+                subsJSON = subsJSON.substring(subsJSON.indexOf("["));
+                subsJSON = subsJSON.substring(0, subsJSON.indexOf("]") + 1);
+                arr = new JSONArray(subsJSON);
+
+                if (timeToUpdate || arr.length() > subsMap.size()) {
+                    for (int j = 0; j < arr.length(); j++) {
+                        subsMap.put(arr.getJSONObject(j).getInt("value"), new Sub(arr.getJSONObject(j).getString("name"), arr.getJSONObject(j).getInt("value")));
+                    }
+                    executeAsyncTask(new UpdateIndex());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
     }
 
     private class UpdateIndex extends AsyncTask<Void, Integer, Void> {
@@ -1137,18 +1338,33 @@ public class Main extends AppCompatActivity {
         protected void onPostExecute(Void result) {
             prefsEditor.putLong("UPDATE_TIME", System.currentTimeMillis());
             prefsEditor.apply();
-            detProgressBar.setVisibility(View.GONE);
             timeToUpdate = false;
+            Main.this.runOnUiThread(new Runnable() {
+                public void run() {
+                    detProgressBar.setVisibility(View.GONE);
+                    Toast.makeText(getApplicationContext(),
+                            "Indexing completed",
+                            Toast.LENGTH_LONG).show();
+                }
+            });
         }
 
         protected void onPreExecute() {
-            detProgressBar.setVisibility(View.VISIBLE);
+            Main.this.runOnUiThread(new Runnable() {
+                public void run() {
+                    detProgressBar.setVisibility(View.VISIBLE);
+                }
+            });
         }
 
         protected void onProgressUpdate(Integer... values) {
-            ProgressBarAnimation anim = new ProgressBarAnimation(detProgressBar, detProgressBar.getProgress(), values[0]);
+            final ProgressBarAnimation anim = new ProgressBarAnimation(detProgressBar, detProgressBar.getProgress(), values[0]);
             anim.setDuration(1000);
-            detProgressBar.startAnimation(anim);
+            Main.this.runOnUiThread(new Runnable() {
+                public void run() {
+                    detProgressBar.startAnimation(anim);
+                }
+            });
         }
     }
 
@@ -1208,66 +1424,6 @@ public class Main extends AppCompatActivity {
         }
     }
 
-    private class LoadJSONasyncInit extends AsyncTask<JSONArray, Void, JSONArray>    {
-
-        protected JSONArray doInBackground(JSONArray... urls) {
-            try {
-                // Fetch subs list
-                doc = Jsoup.connect(mainsite)
-                        .header("Accept-Encoding", "gzip, deflate")
-                        .userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0")
-                        .maxBodySize(0)
-                        .timeout(6000000)
-                        .get();
-                redditSubs = doc.select("script");
-                int i = 0;
-                for (Element sub : redditSubs) {
-                    String at = sub.toString();
-                    if (i == 2) {
-                        subsJSON = at;
-                    }
-                    i++;
-                }
-
-                subsJSON = subsJSON.substring(subsJSON.indexOf("["));
-                subsJSON = subsJSON.substring(0, subsJSON.indexOf("]") + 1);
-                arr = new JSONArray(subsJSON);
-
-                if (timeToUpdate || arr.length() > subsMap.size()) {
-                    for (int j = 0; j < arr.length(); j++) {
-                        subsMap.put(arr.getJSONObject(j).getInt("value"), new Sub(arr.getJSONObject(j).getString("name"), arr.getJSONObject(j).getInt("value")));
-                    }
-                    executeAsyncTask(new UpdateIndex());
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            String str = "";
-
-            try {
-                selectedURL = "https://redditbooru.com/images/?sources=" + selectedString + "&afterDate=";
-                url = new URL(selectedURL + lastIndexTime);
-
-                Scanner scan = new Scanner(url.openStream());
-                while (scan.hasNext())
-                    str += scan.nextLine();
-                scan.close();
-                jsonObjs = new JSONArray(str);
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            return jsonObjs;
-        }
-
-        @Override
-        protected void onPostExecute(JSONArray result) {
-            jsonObjs = result;
-        }
-    }
-
     private class LoadMorePhotos extends AsyncTask<Void, Void, Void> {
         JSONArray tmp;
         JSONArray[] customTmp = new JSONArray[selectedCustomSubs.size()];
@@ -1281,42 +1437,47 @@ public class Main extends AppCompatActivity {
             current_page += 1;
 
             // Normal subs: via Redditbooru
-            try {
-                // refactor into string scanner
-                selectedURL = "https://redditbooru.com/images/?sources=" + selectedString + "&afterDate=";
-                url = new URL(selectedURL + lastIndexTime);
+            if (selectedSubs.size() == 0 && selectedCustomSubs.size() == 0 ||
+                    selectedSubs.size() != 0) {
+                try {
+                    // refactor into string scanner
+                    selectedURL = "https://redditbooru.com/images/?sources=" + selectedString + "&afterDate=";
+                    url = new URL(selectedURL + lastIndexTime);
 
-                Scanner scan = new Scanner(url.openStream());
-                String str = "";
-                while (scan.hasNext())
-                    str += scan.nextLine();
-                scan.close();
+                    Scanner scan = new Scanner(url.openStream());
+                    String str = "";
+                    while (scan.hasNext())
+                        str += scan.nextLine();
+                    scan.close();
 
-                tmp = new JSONArray(str);
-            } catch (Exception e) {
-                e.printStackTrace();
+                    tmp = new JSONArray(str);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
             // Custom subs: from Reddit directly
-            int ix = 0;
-            for (int i : selectedCustomSubs) {
-                try {
-                    String jsonURL = "https://www.reddit.com/" + customSubsMap.get(i).subName + "/.json";
-                    if (nextPages.containsKey(i)) {
-                        jsonURL += "?after="+nextPages.get(i);
+            if (selectedCustomSubs.size() != 0) {
+                int ix = 0;
+                for (int i : selectedCustomSubs) {
+                    try {
+                        String jsonURL = "https://www.reddit.com/" + customSubsMap.get(i).subName + "/.json";
+                        if (nextPages.containsKey(i)) {
+                            jsonURL += "?after=" + nextPages.get(i);
+                        }
+                        url = new URL(jsonURL);
+                        Scanner scan = new Scanner(url.openStream());
+                        String posts = "";
+                        while (scan.hasNext())
+                            posts += scan.nextLine();
+                        scan.close();
+                        JSONObject obj = new JSONObject(posts).getJSONObject("data");
+                        customTmp[ix] = obj.getJSONArray("children");
+                        nextPages.put(i, obj.getString("after"));
+                        ix++;
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                    url = new URL(jsonURL);
-                    Scanner scan = new Scanner(url.openStream());
-                    String posts = "";
-                    while (scan.hasNext())
-                        posts += scan.nextLine();
-                    scan.close();
-                    JSONObject obj = new JSONObject(posts).getJSONObject("data");
-                    customTmp[ix] = obj.getJSONArray("children");
-                    nextPages.put(i, obj.getString("after"));
-                    ix++;
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
             }
             return null;
@@ -1335,8 +1496,21 @@ public class Main extends AppCompatActivity {
             // APPEND NEW DATA TO THE ARRAYLIST AND SET THE ADAPTER TO THE
             // LISTVIEW
 
+            // 4 cases:
+
+            // 1. has no default or custom subs selected
+            //    show all from default
+            // 2. has >=1 default and no custom subs selected
+            //    show default
+            // 3. has no default and >=1 custom subs selected
+            //    show custom
+            // 4. has >=1 default and >=1 custom subs selected
+            //    show both
+
             // Initialize with normal data
-            addToArry(tmp);
+            if (selectedSubs.size() == 0 && selectedCustomSubs.size() == 0 ||
+                    selectedSubs.size() != 0)
+                addToArry(tmp);
 
             // Append custom subs data
             if (selectedCustomSubs.size() != 0)
@@ -1349,120 +1523,6 @@ public class Main extends AppCompatActivity {
             // LIST
             loadingMore = false;
             inDetProgressBar.setVisibility(View.GONE);
-        }
-    }
-
-    public void writeWallpaperExtStorage(Bitmap finalImg) {
-        Long time = System.nanoTime();
-
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Images.Media.TITLE, Long.toString(time));
-        values.put(MediaStore.Images.Media.DISPLAY_NAME, Long.toString(time));
-        values.put(MediaStore.Images.Media.DESCRIPTION, "");
-        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-        values.put(MediaStore.Images.Media.DATE_ADDED, time);
-        values.put(MediaStore.Images.Media.DATE_TAKEN, time);
-
-        Uri uri = null;
-
-        try {
-            uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-
-            if (finalImg != null) {
-                fixMediaDir();
-                OutputStream imageOut = getContentResolver().openOutputStream(uri);
-
-                try {
-                    finalImg.compress(Bitmap.CompressFormat.JPEG, 100, imageOut);
-                } finally {
-                    imageOut.close();
-                }
-
-                Toast.makeText(getApplicationContext(),
-                        "Saved image " + Long.toString(time) + " to gallery",
-                        Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(getApplicationContext(),
-                        "Failed to save image " + Long.toString(time) + " to gallery",
-                        Toast.LENGTH_LONG).show();
-                getContentResolver().delete(uri, null, null);
-                uri = null;
-            }
-        } catch (Exception e) {
-            Toast.makeText(getApplicationContext(),
-                    "Failed to save image " + Long.toString(time) + " to gallery",
-                    Toast.LENGTH_LONG).show();
-            if (uri != null) {
-                getContentResolver().delete(uri, null, null);
-                uri = null;
-            }
-        }
-    }
-
-    public void shareWallpaperExtStorage(Bitmap finalImg) {
-        // Create a new folder AndroidBegin in SD Card
-        File dir = new File(externalStorageDirectory.getAbsolutePath() + "/MoBooru/");
-        dir.mkdirs();
-
-        // Create a name for the saved image
-        File file = new File(dir, "tmp.png");
-        Bitmap bitmap = finalImg;
-        OutputStream output;
-
-        try {
-            // Share Intent
-            Intent share = new Intent(Intent.ACTION_SEND);
-
-            // Type of file to share
-            share.setType("image/jpeg");
-
-            output = new FileOutputStream(file);
-
-            // Compress into png format image from 0% - 100%
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output);
-            output.flush();
-            output.close();
-
-            // Locate the image to Share
-            Uri uri = Uri.fromFile(file);
-
-            // Pass the image into an Intnet
-            share.putExtra(Intent.EXTRA_STREAM, uri);
-
-            // Show the social share chooser list
-            startActivity(Intent.createChooser(share, "Share image"));
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(getApplicationContext(),
-                    "Failed to share image, please check storage permissions",
-                    Toast.LENGTH_LONG).show();
-        }
-    }
-
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case 1:
-                if ((grantResults.length > 0) && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    writeWallpaperExtStorage(currentImg);
-                } else {
-                    Toast.makeText(getApplicationContext(),
-                            "Permission to save images was not granted",
-                            Toast.LENGTH_LONG).show();
-                }
-                break;
-            case 2:
-                if ((grantResults.length > 0) && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    shareWallpaperExtStorage(currentImg);
-                } else {
-                    Toast.makeText(getApplicationContext(),
-                            "Permission to share/ save images was not granted",
-                            Toast.LENGTH_LONG).show();
-                }
-                break;
-
-            default:
-                break;
         }
     }
 }
