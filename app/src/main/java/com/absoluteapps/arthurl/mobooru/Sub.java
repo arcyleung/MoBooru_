@@ -39,22 +39,6 @@ public class Sub implements Serializable, Comparable {
 
     }
 
-    public String getDesc() {
-        return desc;
-    }
-
-    public void setDesc(String desc) {
-        this.desc = desc;
-    }
-
-    public boolean isNSFW() {
-        return isNSFW;
-    }
-
-    public void setNSFW(boolean NSFW) {
-        isNSFW = NSFW;
-    }
-
     public int compareTo(Object s2) {
         return ((Sub) this).subName.compareTo(((Sub) s2).subName);
     }

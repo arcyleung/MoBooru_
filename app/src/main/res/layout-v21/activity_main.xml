@@ -36,7 +36,7 @@
             <android.support.v4.widget.SwipeRefreshLayout
                 android:id="@+id/swipe_container"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="wrap_content">
 
                 <com.etsy.android.grid.StaggeredGridView
                     android:id="@+id/gridView"
@@ -54,7 +54,7 @@
                     android:stretchMode="columnWidth"
                     android:verticalSpacing="1dp"></com.etsy.android.grid.StaggeredGridView>
 
-            </android.support.v4.widget.SwipeRefreshLayout>spl
+            </android.support.v4.widget.SwipeRefreshLayout>
 
         </android.support.design.widget.CoordinatorLayout>
 
@@ -95,8 +95,3 @@
         android:progress="2"
         android:progressBackgroundTint="@color/design_default_color_primary" />
 </RelativeLayout>
-
-
-
-
-

@@ -133,7 +133,7 @@ public class SubSelector extends AppCompatActivity {
                 dialogBuilder.setView(dialogView);
                 final EditText edt = (EditText) dialogView.findViewById(R.id.subEntry);
 
-                dialogBuilder.setTitle("Add custom subreddit");
+                dialogBuilder.setTitle("Add subreddit");
                 dialogBuilder.setPositiveButton("Done", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
 

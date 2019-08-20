@@ -8,34 +8,21 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Test"
-            android:gravity="center"
-            android:textColor="@android:color/white"
-            android:layout_gravity="top|center"
-            android:layout_marginLeft="32dp"
-            android:layout_marginRight="32dp"
-            android:layout_marginTop="32dp"
-            android:textSize="28sp"/>
-
         <ImageView
-            android:id="@+id/computer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:src="@drawable/baseline_help_outline_white_48" />
+            android:id="@+id/imageView"
+            android:layout_width="match_parent"
+            android:layout_gravity="center_vertical|center"
+            android:layout_height="match_parent" />
 
         <TextView
             android:id="@+id/description"
-            android:layout_width="wrap_content"
+            android:background="#cc000000"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Test2"
+            android:text="Access the menu by tapping the top left icon or swiping from the left edge"
             android:gravity="center"
             android:textColor="@android:color/white"
-            android:layout_gravity="bottom|center"
+            android:layout_gravity="center_vertical|center"
             android:maxEms="18"
             android:layout_marginLeft="32dp"
             android:layout_marginRight="32dp"

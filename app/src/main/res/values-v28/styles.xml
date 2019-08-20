@@ -16,11 +16,4 @@
         </item>
     </style>
 
-    <style name="Splash" parent="Theme.AppCompat.NoActionBar">
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowFullscreen">true</item>
-        <item name="android:windowLayoutInDisplayCutoutMode">
-            shortEdges
-        </item>
-    </style>
 </resources>

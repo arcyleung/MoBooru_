@@ -11,12 +11,12 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
-import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.net.ConnectivityManager;
@@ -32,11 +32,10 @@ import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
-import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -87,7 +86,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
@@ -103,8 +101,8 @@ public class Main extends AppCompatActivity {
     public static final int MIN_COLUMNS_LANDSCAPE = 2;
 
     // Core config
-    final String appName = "MoBooru";
-    final String verString = "2.0";
+    String appName = "MoBooru";
+    String verString;
     final int progressBarScale = 100;
     int thumbnail_size = 300;
     int pageSize = 30;
@@ -122,6 +120,7 @@ public class Main extends AppCompatActivity {
     String selectedString = "";
     boolean showNsfw;
     boolean showTitles;
+    boolean firstLaunch;
     String selectedURL = "https://redditbooru.com/images/?sources=" + selectedString + "&afterDate=";
     Document doc;
     Elements redditSubs;
@@ -147,7 +146,6 @@ public class Main extends AppCompatActivity {
     NavigationView navigationView;
     StaggeredGridView staggeredGridView;
     DrawerLayout drawerLayout;
-    AppBarLayout appBarLayout;
     SwipeRefreshLayout swipeContainer;
 
     // Sharedprefs, serialization, storage
@@ -198,7 +196,6 @@ public class Main extends AppCompatActivity {
         inDetProgressBar.setVisibility(View.GONE);
 
         toolbar = (Toolbar) findViewById(R.id.toolbar);
-        appBarLayout = (AppBarLayout) findViewById(R.id.appBar);
         ActionBarDrawerToggle mDrawerToggle;
         setSupportActionBar(toolbar);
         final ActionBar actionBar = getSupportActionBar();
@@ -265,6 +262,23 @@ public class Main extends AppCompatActivity {
             // Time to reindex subs
             if (!prefs.contains("UPDATE_TIME") || System.currentTimeMillis() - prefs.getLong("UPDATE_TIME", 0) > 604800000) {
                 timeToUpdate = true;
+            }
+
+            // Show help snackbar on first launch
+            if (prefs.getBoolean("FIRST_LAUNCH", true)) {
+                Snackbar snackbar = Snackbar
+                        .make(drawerLayout, "Would you like to view the help guide?", 20000)
+                        .setAction("YES!", new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
+                                startActivity(new Intent(getApplicationContext(), Help.class));
+                                overridePendingTransition(R.transition.fade_in, R.transition.fade_out);
+                            }
+                        });
+
+                snackbar.show();
+                prefsEditor.putBoolean("FIRST_LAUNCH", false).commit();
             }
 
         } catch (Exception ex) {
@@ -370,6 +384,12 @@ public class Main extends AppCompatActivity {
                         return true;
 
                     case R.id.nav_about:
+                        try {
+                            PackageInfo pInfo = Main.this.getPackageManager().getPackageInfo(getPackageName(), 0);
+                            verString = pInfo.versionName;
+                        } catch (PackageManager.NameNotFoundException e) {
+                            e.printStackTrace();
+                        }
                         final AlertDialog d1 = new AlertDialog.Builder(Main.this)
                                 .setTitle("About")
                                 .setNegativeButton("Back", new DialogInterface.OnClickListener() {
@@ -457,7 +477,7 @@ public class Main extends AppCompatActivity {
         }
 
         if (timeToUpdate) {
-            new FetchSubs().execute();
+            executeAsyncTask(new FetchSubs());
             Toast.makeText(getApplicationContext(),
                     "Updating subreddit index...",
                     Toast.LENGTH_LONG).show();
@@ -484,8 +504,7 @@ public class Main extends AppCompatActivity {
                 staggeredGridView.setOnScrollListener(new EndlessScrollListener() {
                     @Override
                     public void onLoadMore(int page, int totalItemsCount) {
-                        lm = new LoadMorePhotos();
-                        lm.execute();
+                        executeAsyncTask(new LoadMorePhotos());
                     }
                 });
             } else {
@@ -927,13 +946,6 @@ public class Main extends AppCompatActivity {
         fab4.animate().translationY(0);
     }
 
-    // Append more data into the adapter
-    public void customLoadMoreDataFromApi(int offset) {
-        // This method probably sends out a network request and appends new data items to your adapter.
-        // Use the offset value and add it as a parameter to your API request to retrieve paginated data.
-        // Deserialize API response and then construct new objects to append to the adapter
-    }
-
     // External storage
     void fixMediaDir() {
         File sdcard = Environment.getExternalStorageDirectory();
@@ -1112,8 +1124,8 @@ public class Main extends AppCompatActivity {
                                 data.nsfw = post.getBoolean("over_18");
                                 data.redditSrc = "https://reddit.com" + post.getString("permalink");
 //                                data.title = post.getString("title").replaceAll("\\s*\\[.+?\\]\\s*", "").replace("&amp;", "&"); //+"\n("+data.score+"\uD83D\uDD3A)";
-                                data.title = post.getString("subreddit_name_prefixed");
-                                data.series = data.title.replaceAll("^[^\\[]*", "").replace("&amp;", "&");
+                                data.series = post.getString("subreddit_name_prefixed");
+                                data.title = post.getString("title").replace("&amp;", "&");
 
                                 datas.add(data);
                             } else {
@@ -1128,6 +1140,10 @@ public class Main extends AppCompatActivity {
         }
         return;
     }
+
+    /*
+        Tasks that require permission
+     */
 
     public void writeWallpaperExtStorage(Bitmap finalImg) {
         Long time = System.nanoTime();
@@ -1253,8 +1269,32 @@ public class Main extends AppCompatActivity {
         }
     }
 
-    private class FetchSubs extends AsyncTask<Void, Void, Void> {
+    public class ProgressBarAnimation extends Animation {
+        private ProgressBar progressBar;
+        private float from;
+        private float to;
 
+        public ProgressBarAnimation(ProgressBar progressBar, float from, float to) {
+            super();
+            this.progressBar = progressBar;
+            this.from = from;
+            this.to = to;
+        }
+
+        @Override
+        protected void applyTransformation(float interpolatedTime, Transformation t) {
+            super.applyTransformation(interpolatedTime, t);
+            float value = from + (to - from) * interpolatedTime;
+            progressBar.setProgress((int) value);
+        }
+
+    }
+
+    /*
+        Asynchronous tasks that leverage parallelism
+     */
+
+    private class FetchSubs extends AsyncTask<Void, Void, Void> {
         protected Void doInBackground(Void... params) {
             try {
                 // Fetch subs list
@@ -1368,27 +1408,6 @@ public class Main extends AppCompatActivity {
         }
     }
 
-    public class ProgressBarAnimation extends Animation {
-        private ProgressBar progressBar;
-        private float from;
-        private float to;
-
-        public ProgressBarAnimation(ProgressBar progressBar, float from, float to) {
-            super();
-            this.progressBar = progressBar;
-            this.from = from;
-            this.to = to;
-        }
-
-        @Override
-        protected void applyTransformation(float interpolatedTime, Transformation t) {
-            super.applyTransformation(interpolatedTime, t);
-            float value = from + (to - from) * interpolatedTime;
-            progressBar.setProgress((int) value);
-        }
-
-    }
-
     private class DownloadImage extends AsyncTask<String, Void, Bitmap> {
         InteractiveImageView bmImage;
         ProgressDialog pDialog;
@@ -1489,10 +1508,6 @@ public class Main extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(Void result) {
-
-            // get listview current position - used to maintain scroll position
-//            int currentPosition = staggeredGridView.getFirstVisiblePosition();
-
             // APPEND NEW DATA TO THE ARRAYLIST AND SET THE ADAPTER TO THE
             // LISTVIEW
 
@@ -1520,7 +1535,6 @@ public class Main extends AppCompatActivity {
             adapter.notifyDataSetChanged();
 
             // SET LOADINGMORE "FALSE" AFTER ADDING NEW FEEDS TO THE EXISTING
-            // LIST
             loadingMore = false;
             inDetProgressBar.setVisibility(View.GONE);
         }

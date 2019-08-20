@@ -19,7 +19,7 @@
             android:background="#cc000000"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Add your own subreddits if they are not listed \n\nPress and hold a subreddit to view its description or delete it"
+            android:text="Share, save, or set as wallpaper!"
             android:gravity="center"
             android:textColor="@android:color/white"
             android:layout_gravity="center_vertical|center"
