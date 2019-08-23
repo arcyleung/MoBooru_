@@ -16,63 +16,41 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.net.ConnectivityManager
 import android.net.Uri
-import android.os.AsyncTask
-import android.os.Build
-import android.os.Bundle
-import android.os.Environment
-import android.os.Looper
-import android.os.StrictMode
+import android.os.*
 import android.preference.PreferenceManager
 import android.provider.MediaStore
-import android.support.annotation.RequiresApi
-import android.support.design.widget.FloatingActionButton
-import android.support.design.widget.NavigationView
-import android.support.design.widget.Snackbar
-import android.support.v4.app.ActivityCompat
-import android.support.v4.view.ViewCompat
-import android.support.v4.widget.DrawerLayout
-import android.support.v4.widget.SwipeRefreshLayout
-import android.support.v7.app.ActionBarDrawerToggle
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.SwitchCompat
-import android.support.v7.widget.Toolbar
 import android.text.Html
 import android.text.method.LinkMovementMethod
 import android.util.DisplayMetrics
-import android.view.Display
-import android.view.Menu
-import android.view.MotionEvent
-import android.view.Surface
-import android.view.View
-import android.view.Window
-import android.view.WindowManager
+import android.view.*
 import android.view.animation.Animation
 import android.view.animation.Transformation
-import android.widget.AdapterView
-import android.widget.NumberPicker
-import android.widget.ProgressBar
-import android.widget.RelativeLayout
-import android.widget.TextView
-import android.widget.Toast
-
+import android.widget.*
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
+import androidx.appcompat.widget.Toolbar
+import androidx.core.app.ActivityCompat
+import androidx.core.view.ViewCompat
+import androidx.drawerlayout.widget.DrawerLayout
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.etsy.android.grid.StaggeredGridView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.navigation.NavigationView
+import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-
 import org.json.JSONArray
 import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
-
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.net.URL
-import java.util.ArrayList
-import java.util.HashMap
-import java.util.HashSet
-import java.util.Scanner
+import java.util.*
 
 class Main : AppCompatActivity() {
 
@@ -116,7 +94,6 @@ class Main : AppCompatActivity() {
     internal var dialog: Dialog? = null
     internal lateinit var toolbar: Toolbar
     internal lateinit var close: FloatingActionButton
-    internal var actions: FloatingActionButton? = null
     internal lateinit var fab: FloatingActionButton
     internal lateinit var fab1: FloatingActionButton
     internal lateinit var fab2: FloatingActionButton

@@ -1,7 +1,7 @@
 package com.absoluteapps.arthurl.mobooru
 
-import android.support.v4.view.ViewPager
 import android.view.View
+import androidx.viewpager.widget.ViewPager
 
 class HelpPageTransformer : ViewPager.PageTransformer {
     override fun transformPage(page: View, position: Float) {

@@ -41,13 +41,10 @@ class DataAdapter(internal var activity: Activity, internal var resource: Int, i
         holder.title!!.text = if (data.title.length > 35) data.title.substring(0, 30) + "..." else data.title
         holder.score!!.text = data.score
         holder.score!!.setTypeface(null, Typeface.BOLD_ITALIC)
-        if (data.ogSrc == null) {
-            holder.description!!.text = ""
-        } else {
-            holder.description!!.text = if (data.series.length > 30) data.series.substring(0, 25) + "..." else data.series
-        }
+        holder.description!!.text = if (data.series.length > 30) data.series.substring(0, 25) + "..." else data.series
+
         if (data.thumbImgUrl !== "") {
-            if (data.nsfw && (!showNsfw)!!) {
+            if (data.nsfw && !showNsfw) {
                 holder.image!!.heightRatio = 1.0
                 Picasso.get()
                         .load(R.drawable.nsfwlogo)

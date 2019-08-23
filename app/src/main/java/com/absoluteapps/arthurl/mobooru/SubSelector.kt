@@ -10,39 +10,19 @@ import android.os.AsyncTask
 import android.os.Build
 import android.os.Bundle
 import android.preference.PreferenceManager
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.view.ContextThemeWrapper
-import android.support.v7.widget.Toolbar
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.view.inputmethod.InputMethodManager
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.CheckBox
-import android.widget.EditText
-import android.widget.ImageButton
-import android.widget.ListView
-import android.widget.TextView
-import android.widget.Toast
-
+import android.widget.*
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ContextThemeWrapper
+import androidx.appcompat.widget.Toolbar
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-
 import org.json.JSONObject
-
 import java.net.URL
-import java.util.ArrayList
-import java.util.Collections
-import java.util.HashMap
-import java.util.HashSet
-import java.util.Locale
-import java.util.Scanner
+import java.util.*
 
 class SubSelector : AppCompatActivity() {
 

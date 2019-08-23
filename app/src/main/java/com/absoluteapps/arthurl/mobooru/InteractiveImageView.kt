@@ -10,7 +10,7 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import android.widget.ImageView
 
-class InteractiveImageView : android.support.v7.widget.AppCompatImageView {
+class InteractiveImageView : androidx.appcompat.widget.AppCompatImageView {
     //Scaling and transformation
     internal lateinit var matrix: Matrix
 
@@ -59,7 +59,7 @@ class InteractiveImageView : android.support.v7.widget.AppCompatImageView {
 
         scaleType = ImageView.ScaleType.MATRIX
 
-        setOnTouchListener { v, event ->
+        setOnTouchListener { _, event ->
             mScaleDetector.onTouchEvent(event)
 
             val curr = PointF(event.x, event.y)

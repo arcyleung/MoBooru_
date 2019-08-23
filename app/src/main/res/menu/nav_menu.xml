@@ -2,8 +2,7 @@
 <menu xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <group android:id="@+id/group_app"
-        android:checkableBehavior="single">
+    <group android:checkableBehavior="single">
         <item android:id="@+id/nav_subs"
             android:title="Subreddits" />
 
@@ -15,7 +14,6 @@
 
     </group>
     <group
-        android:id="@+id/group_settings"
         android:focusable="false"
         android:checkableBehavior="single"
         >
@@ -34,8 +32,7 @@
         <item android:id="@+id/columns"
             android:title="Columns"/>
     </group>
-    <group android:id="@+id/group_about"
-        android:checkableBehavior="single">
+    <group android:checkableBehavior="single">
         <item android:id="@+id/nav_help"
             android:title="Help"/>
         <item android:id="@+id/nav_about"

@@ -3,10 +3,10 @@ package com.absoluteapps.arthurl.mobooru
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.Bundle
-import android.support.design.widget.Snackbar
-import android.support.v4.view.ViewPager
-import android.support.v7.app.AppCompatActivity
 import android.view.View
+import androidx.appcompat.app.AppCompatActivity
+import androidx.viewpager.widget.ViewPager
+import com.google.android.material.snackbar.Snackbar
 
 class Help : AppCompatActivity() {
 
