@@ -28,21 +28,21 @@ class SubSelector : AppCompatActivity() {
 
     internal lateinit var origList: ArrayList<Sub>
     internal lateinit var subsList: ArrayList<Sub>
-    internal lateinit var subsMap: HashMap<Int, Sub>
+    private lateinit var subsMap: HashMap<Int, Sub>
     internal lateinit var customSubsMap: HashMap<Int, Sub>
     internal lateinit var selectedSubs: HashSet<Int>
     internal lateinit var selectedCustomSubs: HashSet<Int>
     internal var adp: CustomAdapter? = null
     internal var gson = Gson()
-    internal lateinit var mInfo: ImageButton
-    internal lateinit var mAddCustomSub: ImageButton
-    internal lateinit var mEditText: EditText
+    private lateinit var mInfo: ImageButton
+    private lateinit var mAddCustomSub: ImageButton
+    private lateinit var mEditText: EditText
     internal var hashSetMap = object : TypeToken<HashSet<Int>>() {
 
     }.type
     internal lateinit var progressDialog: ProgressDialog
-    internal lateinit var addCustomSubTask: AddCustomSub
-    internal lateinit var prefs: SharedPreferences
+    private lateinit var addCustomSubTask: AddCustomSub
+    private lateinit var prefs: SharedPreferences
     internal lateinit var prefsEditor: SharedPreferences.Editor
     internal var intSubMap = object : TypeToken<Map<Int, Sub>>() {
 
@@ -71,7 +71,7 @@ class SubSelector : AppCompatActivity() {
             }
 
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                if (s.length != 0) {
+                if (s.isNotEmpty()) {
                     //                    mClearText.setVisibility(View.VISIBLE);
                 } else {
                     //                    mClearText.setVisibility(View.INVISIBLE);
@@ -146,11 +146,6 @@ class SubSelector : AppCompatActivity() {
         buttonPressed()
     }
 
-    fun clear(view: View) {
-        mEditText.setText("")
-        //        mClearText.setVisibility(View.INVISIBLE);
-    }
-
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_settings, menu)
@@ -178,22 +173,22 @@ class SubSelector : AppCompatActivity() {
     }
 
     private fun displayList() {
-        Collections.sort(subsList)
+        subsList.sort()
         adp = CustomAdapter(this, R.layout.activity_settings_subs_checkboxes, subsList)
         val lv = findViewById<View>(R.id.listView) as ListView
         lv.adapter = adp
 
         // Locate the EditText in listview_main.xml
-        val editsearch = findViewById<View>(R.id.search) as EditText
+        val editSearch = findViewById<View>(R.id.search) as EditText
 
         // Capture Text in EditText
-        editsearch.addTextChangedListener(object : TextWatcher {
+        editSearch.addTextChangedListener(object : TextWatcher {
 
             override fun afterTextChanged(arg0: Editable) {
                 // TODO Auto-generated method stub
-                val text = editsearch.text.toString().toLowerCase(Locale.getDefault())
+                val text = editSearch.text.toString().toLowerCase(Locale.getDefault())
                 adp!!.filter(text)
-                Collections.sort(subsList)
+                subsList.sort()
             }
 
             override fun beforeTextChanged(arg0: CharSequence, arg1: Int,
@@ -207,23 +202,23 @@ class SubSelector : AppCompatActivity() {
             }
         })
 
-        val subs_toolbar = findViewById<View>(R.id.subs_toolbar) as Toolbar
+        val subsToolbar = findViewById<View>(R.id.subs_toolbar) as Toolbar
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            subs_toolbar.title = "Subreddits"
+            subsToolbar.title = "Subreddits"
         }
-        setSupportActionBar(subs_toolbar)
+        setSupportActionBar(subsToolbar)
         supportActionBar!!.setDisplayHomeAsUpEnabled(true)
         supportActionBar!!.setDisplayShowHomeEnabled(true)
 
         //        subs_toolbar.setNavigationIcon(R.drawable.);
-        subs_toolbar.setNavigationOnClickListener {
+        subsToolbar.setNavigationOnClickListener {
             finish()
             overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
             startActivity(Intent(this@SubSelector, Main::class.java))
             overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
         }
 
-        lv.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+        lv.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, _ ->
             val sub = parent.getItemAtPosition(position) as Sub
             val cb = view.findViewById<View>(R.id.checkBox) as CheckBox
 
@@ -243,20 +238,20 @@ class SubSelector : AppCompatActivity() {
             }
             cb.isChecked = !isSelected
             sub.selected = !isSelected
-            Collections.sort(subsList)
+            subsList.sort()
             adp!!.notifyDataSetChanged()
         }
 
-        lv.onItemLongClickListener = AdapterView.OnItemLongClickListener { parent, view, position, id ->
+        lv.onItemLongClickListener = AdapterView.OnItemLongClickListener { parent, _, position, _ ->
             val sub = parent.getItemAtPosition(position) as Sub
             val d1: AlertDialog
             if (sub.isCustom) {
                 d1 = AlertDialog.Builder(ContextThemeWrapper(this@SubSelector, R.style.AppTheme))
                         .setTitle("About " + sub.subName + ":")
-                        .setNegativeButton("Back") { dialog, which ->
+                        .setNegativeButton("Back") { _, _ ->
                             // Do nothing
                         }
-                        .setNeutralButton("Delete") { dialogInterface, i ->
+                        .setNeutralButton("Delete") { _, _ ->
                             customSubsMap.remove(sub.subID)
                             val serial = gson.toJson(customSubsMap, intSubMap)
                             prefsEditor.putString("CUSTOM_SUBS", serial)
@@ -272,15 +267,15 @@ class SubSelector : AppCompatActivity() {
 
                             Toast.makeText(this@SubSelector, "Removed " + sub.subName, Toast.LENGTH_SHORT).show()
                         }
-                        .setMessage(if (sub.desc.length > 0) sub.desc else "No description")
+                        .setMessage(if (sub.desc.isNotEmpty()) sub.desc else "No description")
                         .create()
             } else {
                 d1 = AlertDialog.Builder(ContextThemeWrapper(this@SubSelector, R.style.AppTheme))
                         .setTitle("About " + sub.subName + ":")
-                        .setNegativeButton("Back") { dialog, which ->
+                        .setNegativeButton("Back") { _, _ ->
                             // Do nothing
                         }
-                        .setMessage(if (sub.desc.length > 0) sub.desc else "No description")
+                        .setMessage(if (sub.desc.isNotEmpty()) sub.desc else "No description")
                         .create()
             }
             d1.show()
@@ -316,7 +311,7 @@ class SubSelector : AppCompatActivity() {
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
             var convertView = convertView
 
-            var holder: ViewHolder? = null
+            var holder: ViewHolder?
 
             if (convertView == null) {
                 val vi = getSystemService(
@@ -347,7 +342,7 @@ class SubSelector : AppCompatActivity() {
             var charText = charText
             charText = charText.toLowerCase(Locale.getDefault())
             subsList.clear()
-            if (charText.length == 0) {
+            if (charText.isEmpty()) {
                 subsList.addAll(origList)
             } else {
                 for (s in origList) {
@@ -367,13 +362,13 @@ class SubSelector : AppCompatActivity() {
     }
 
     // TODO: Implement as fallback method if redditbooru is down
-    inner class AddCustomSub internal constructor(internal var customSubName: String) : AsyncTask<Void, Int, Int>() {
+    inner class AddCustomSub internal constructor(private var customSubName: String) : AsyncTask<Void, Int, Int>() {
 
         override fun doInBackground(vararg params: Void): Int? {
             // Parse subreddit
             // if begins with r/, pass directly
             // else prefix with r/
-            if (customSubName.length == 0)
+            if (customSubName.isEmpty())
                 return -1
             if (!customSubName.startsWith("r/"))
                 customSubName = "r/$customSubName"

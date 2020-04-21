@@ -51,16 +51,18 @@ import java.io.FileOutputStream
 import java.io.OutputStream
 import java.net.URL
 import java.util.*
+import kotlin.math.ceil
+import kotlin.system.exitProcess
 
 class Main : AppCompatActivity() {
 
     // Core config
-    internal var appName = "MoBooru"
-    internal lateinit var verString: String
+    private var appName = "MoBooru"
+    private lateinit var verString: String
     internal val progressBarScale = 100
-    internal var thumbnail_size = 300
-    internal var pageSize = 30
-    internal var current_page = 1
+    private var thumbnailSize = 300
+    private var pageSize = 30
+    internal var currentPage = 1
     internal var mainsite = "https://redditbooru.com"
     internal lateinit var url: URL
     internal lateinit var display: Display
@@ -72,20 +74,18 @@ class Main : AppCompatActivity() {
 
     // Site config
     internal var selectedString = ""
-    internal var showNsfw: Boolean = false
-    internal var showTitles: Boolean = false
-    internal var firstLaunch: Boolean = false
+    private var showNsfw: Boolean = false
+    private var showTitles: Boolean = false
     internal var selectedURL = "https://redditbooru.com/images/?sources=$selectedString&afterDate="
     internal lateinit var doc: Document
     internal lateinit var redditSubs: Elements
     internal var subsJSON = ""
     internal lateinit var arr: JSONArray
-    internal var jsonObjs: JSONArray? = null
     internal var datas = ArrayList<Data>()
     internal var favorites = ArrayList<Data>()
-    internal lateinit var lm: LoadMorePhotos
+    private lateinit var lm: LoadMorePhotos
     internal var loadingMore = true
-    internal var viewingFavorites: Boolean = false
+    private var viewingFavorites: Boolean = false
 
     // UI, Views, Layout
     internal lateinit var inDetProgressBar: ProgressBar
@@ -102,10 +102,10 @@ class Main : AppCompatActivity() {
     internal lateinit var fab5: FloatingActionButton
     internal lateinit var fab6: FloatingActionButton
     internal var isFABOpen: Boolean = false
-    internal lateinit var navigationView: NavigationView
-    internal lateinit var staggeredGridView: StaggeredGridView
+    private lateinit var navigationView: NavigationView
+    private lateinit var staggeredGridView: StaggeredGridView
     internal lateinit var drawerLayout: DrawerLayout
-    internal lateinit var swipeContainer: SwipeRefreshLayout
+    private lateinit var swipeContainer: SwipeRefreshLayout
 
     // Sharedprefs, serialization, storage
     internal var subsMap = HashMap<Int, Sub>()
@@ -119,7 +119,7 @@ class Main : AppCompatActivity() {
     internal var intSubMap = object : TypeToken<Map<Int, Sub>>() {
 
     }.type
-    internal var intSet = object : TypeToken<Set<Int>>() {
+    private var intSet = object : TypeToken<Set<Int>>() {
 
     }.type
     internal var dataList = object : TypeToken<ArrayList<Data>>() {
@@ -127,7 +127,7 @@ class Main : AppCompatActivity() {
     }.type
     internal lateinit var prefs: SharedPreferences
     internal lateinit var prefsEditor: SharedPreferences.Editor
-    internal var externalStorageDirectory = Environment.getExternalStorageDirectory()
+    private var externalStorageDirectory = Environment.getExternalStorageDirectory()
     internal var currentImg: Bitmap? = null
     private var adapter: DataAdapter? = null
 
@@ -138,6 +138,7 @@ class Main : AppCompatActivity() {
             return activeNetworkInfo != null && activeNetworkInfo.isConnected
         }
 
+    @RequiresApi(Build.VERSION_CODES.KITKAT)
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
@@ -184,7 +185,6 @@ class Main : AppCompatActivity() {
         try {
             prefs = PreferenceManager.getDefaultSharedPreferences(baseContext)
             prefsEditor = prefs.edit()
-
             // Get saved subs
             subsMap = gson.fromJson(prefs.getString("SUBS", "{1: {customSubName: 'Awwnime', subID: 1, subscriberCount: 0, selected: true, isNSFW: false, desc: ''}}"), intSubMap)
             customSubsMap = gson.fromJson(prefs.getString("CUSTOM_SUBS", "{}"), intSubMap)
@@ -192,14 +192,15 @@ class Main : AppCompatActivity() {
             selectedCustomSubs = gson.fromJson(prefs.getString("SELECTED_CUSTOM_SUBS", "[]"), intSet)
             favorites = gson.fromJson(prefs.getString("FAVORITES", "[]"), dataList)
             showNsfw = prefs.getBoolean("SHOW_NSFW", false)
-            toolbar.visibility = if (!prefs.getBoolean("FULLSCREEN", false) == true) View.VISIBLE else View.GONE
+            toolbar.visibility = if (!prefs.getBoolean("FULLSCREEN", false)) {
+                View.VISIBLE
+            } else View.GONE
             showTitles = prefs.getBoolean("SHOW_TITLES", true)
-            thumbnail_size = prefs.getInt("THUMBNAIL_SIZE", 300)
+            thumbnailSize = prefs.getInt("THUMBNAIL_SIZE", 300)
 
             // Fullscreen to false by default
             if (!prefs.contains("FULLSCREEN")) {
-                prefsEditor.putBoolean("FULLSCREEN", false)
-                prefsEditor.apply()
+                prefsEditor.putBoolean("FULLSCREEN", false).apply()
             }
             if (prefs.getBoolean("FULLSCREEN", false)) {
                 immersiveFullscreen()
@@ -209,14 +210,12 @@ class Main : AppCompatActivity() {
 
             // Show titles to true by default
             if (!prefs.contains("SHOW_TITLES")) {
-                prefsEditor.putBoolean("SHOW_TITLES", true)
-                prefsEditor.apply()
+                prefsEditor.putBoolean("SHOW_TITLES", true).apply()
             }
 
             // Thumbnail size is 300 by default
             if (!prefs.contains("THUMBNAIL_SIZE")) {
-                prefsEditor.putInt("THUMBNAIL_SIZE", 300)
-                prefsEditor.apply()
+                prefsEditor.putInt("THUMBNAIL_SIZE", 300).apply()
             }
 
             // Time to reindex subs
@@ -247,7 +246,6 @@ class Main : AppCompatActivity() {
         setFavoriteSubs()
 
         navigationView.setNavigationItemSelectedListener(NavigationView.OnNavigationItemSelectedListener { item ->
-            val intent: Intent
             when (item.itemId) {
                 R.id.nav_subs -> {
                     if (!timeToUpdate) {
@@ -303,7 +301,7 @@ class Main : AppCompatActivity() {
 
                     numberPicker.wrapSelectorWheel = false
                     d2.setPositiveButton("Done", object : DialogInterface.OnClickListener {
-                        internal var rotation = display.rotation
+                        var rotation = display.rotation
 
                         override fun onClick(dialogInterface: DialogInterface, i: Int) {
                             if (rotation == Surface.ROTATION_0) {
@@ -324,7 +322,7 @@ class Main : AppCompatActivity() {
                             overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
                         }
                     })
-                    d2.setNegativeButton("Cancel") { dialogInterface, i -> }
+                    d2.setNegativeButton("Cancel") { _, _ -> }
                     val alertDialog = d2.create()
                     alertDialog.show()
 
@@ -348,7 +346,7 @@ class Main : AppCompatActivity() {
 
                     val d1 = AlertDialog.Builder(this@Main)
                             .setTitle("About")
-                            .setNegativeButton("Back") { dialog, which ->
+                            .setNegativeButton("Back") { _, _ ->
                                 // do nothing
                             }
                             .setIcon(R.drawable.ic_launcher)
@@ -379,10 +377,10 @@ class Main : AppCompatActivity() {
         if (!isNetworkAvailable) {
             val d = AlertDialog.Builder(this@Main)
                     .setTitle("No network connection")
-                    .setNegativeButton("Quit") { dialog, which ->
+                    .setNegativeButton("Quit") { _, _ ->
                         moveTaskToBack(true)
-                        android.os.Process.killProcess(android.os.Process.myPid())
-                        System.exit(1)
+                        Process.killProcess(Process.myPid())
+                        exitProcess(1)
                     }
                     .setIcon(R.drawable.ic_launcher)
                     .setMessage("Sorry, please connect to Wi-Fi or cellular service and try again later!")
@@ -439,7 +437,7 @@ class Main : AppCompatActivity() {
             staggeredGridView = findViewById<View>(R.id.gridView) as StaggeredGridView
             staggeredGridView.adapter = adapter
 
-            if (viewingFavorites == false) {
+            if (!viewingFavorites) {
 
                 lm = LoadMorePhotos()
                 lm.execute()
@@ -452,10 +450,10 @@ class Main : AppCompatActivity() {
                 datas = gson.fromJson(prefs.getString("FAVORITES", "[]"), dataList)
                 if (datas.size == 0) {
                     val d1: AlertDialog
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                         d1 = AlertDialog.Builder(this@Main)
                                 .setTitle("Favorites")
-                                .setNegativeButton("Back") { dialog, which ->
+                                .setNegativeButton("Back") { _, _ ->
                                     // do nothing
                                 }
                                 .setMessage("You have not added any favorites yet. To add a favorite, press the heart button when viewing an image!")
@@ -479,11 +477,6 @@ class Main : AppCompatActivity() {
 
     }
 
-    override fun onResume() {
-        super.onResume()
-    }
-
-
     override fun onPause() {
         if (dialog != null)
             dialog!!.dismiss()
@@ -500,7 +493,7 @@ class Main : AppCompatActivity() {
         super.onDestroy()
     }
 
-    fun calcScreenSize() {
+    private fun calcScreenSize() {
         val outPoint = Point()
         if (Build.VERSION.SDK_INT >= 19) {
             // include navigation bar
@@ -524,6 +517,7 @@ class Main : AppCompatActivity() {
         window.decorView.systemUiVisibility = 0
     }
 
+    @RequiresApi(Build.VERSION_CODES.KITKAT)
     fun immersiveFullscreen() {
         window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
@@ -534,262 +528,259 @@ class Main : AppCompatActivity() {
                 or View.SYSTEM_UI_FLAG_IMMERSIVE)
     }
 
-    fun setOnClickListener() {
-        staggeredGridView.setOnItemClickListener(object : AdapterView.OnItemClickListener {
-            @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
-            override fun onItemClick(adapterView: AdapterView<*>, view: View, position: Int, id: Long) {
-                dialog = Dialog(this@Main)
-                dialog!!.requestWindowFeature(Window.FEATURE_NO_TITLE)
-                val selected = datas[position]
-                val zoomImageView = InteractiveImageView(this@Main)
-                isFABOpen = false
-                progressDialog = ProgressDialog.show(this@Main, "Downloading", "...", true)
+    private fun setOnClickListener() {
+        staggeredGridView.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
+            dialog = Dialog(this@Main)
+            dialog!!.requestWindowFeature(Window.FEATURE_NO_TITLE)
+            val selected = datas[position]
+            val zoomImageView = InteractiveImageView(this@Main)
+            isFABOpen = false
+            progressDialog = ProgressDialog.show(this@Main, "Downloading", "...", true)
 
-                object : Thread() {
-                    override fun run() {
-                        var img: Bitmap? = null
-                        try {
-                            val tmp = DownloadImage(zoomImageView).execute(selected.imgUrl).get()
-                            if (tmp == null) {
-                                Toast.makeText(applicationContext,
-                                        "Error rendering image: file corrupted or too large",
-                                        Toast.LENGTH_LONG).show()
-                            } else {
-                                img = tmp
-                                bitmapWidth = img.width
-                                bitmapHeight = img.height
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
+            object : Thread() {
+                @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+                override fun run() {
+                    var img: Bitmap? = null
+                    try {
+                        val tmp = DownloadImage(zoomImageView).execute(selected.imgUrl).get()
+                        if (tmp == null) {
+                            Toast.makeText(applicationContext,
+                                    "Error rendering image: file corrupted or too large",
+                                    Toast.LENGTH_LONG).show()
+                        } else {
+                            img = tmp
+                            bitmapWidth = img.width
+                            bitmapHeight = img.height
                         }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
 
-                        dialog!!.setOnCancelListener {
-                            if (prefs.getBoolean("FULLSCREEN", false)) {
-                                immersiveFullscreen()
-                            } else {
-                                nonFullscreen()
-                            }
+                    dialog!!.setOnCancelListener {
+                        if (prefs.getBoolean("FULLSCREEN", false)) {
+                            immersiveFullscreen()
+                        } else {
+                            nonFullscreen()
                         }
+                    }
 
-                        try {
-                            // code runs in a thread
-                            val finalImg = img
-                            runOnUiThread {
-                                dialog!!.requestWindowFeature(Window.FEATURE_NO_TITLE) //before
-                                dialog!!.setContentView(R.layout.popup_imgview)
-                                dialog!!.window!!.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
-                                //                                    dialog.getWindow().setFeatureDrawable();
+                    try {
+                        // code runs in a thread
+                        val finalImg = img
+                        runOnUiThread {
+                            dialog!!.requestWindowFeature(Window.FEATURE_NO_TITLE) //before
+                            dialog!!.setContentView(R.layout.popup_imgview)
+                            dialog!!.window!!.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
+                            //                                    dialog.getWindow().setFeatureDrawable();
 
-                                val image = dialog!!.findViewById<View>(R.id.imageview) as InteractiveImageView
-                                image.setImageBitmap(finalImg)
+                            val image = dialog!!.findViewById<View>(R.id.imageview) as InteractiveImageView
+                            image.setImageBitmap(finalImg)
 
-                                dialog!!.window!!.setLayout(screenWidth, screenHeight)
-                                dialog!!.window!!.setDimAmount(.9f)
-                                dialog!!.show()
+                            dialog!!.window!!.setLayout(screenWidth, screenHeight)
+                            dialog!!.window!!.setDimAmount(.9f)
+                            dialog!!.show()
 
-                                close = dialog!!.findViewById<View>(R.id.imageClose) as FloatingActionButton
-                                fab = dialog!!.findViewById<View>(R.id.fab) as FloatingActionButton
-                                fab1 = dialog!!.findViewById<View>(R.id.fab1) as FloatingActionButton
-                                fab2 = dialog!!.findViewById<View>(R.id.fab2) as FloatingActionButton
-                                fab3 = dialog!!.findViewById<View>(R.id.fab3) as FloatingActionButton
-                                fab4 = dialog!!.findViewById<View>(R.id.fab4) as FloatingActionButton
-                                fab5 = dialog!!.findViewById<View>(R.id.fab5) as FloatingActionButton
-                                fab6 = dialog!!.findViewById<View>(R.id.fab6) as FloatingActionButton
+                            close = dialog!!.findViewById<View>(R.id.imageClose) as FloatingActionButton
+                            fab = dialog!!.findViewById<View>(R.id.fab) as FloatingActionButton
+                            fab1 = dialog!!.findViewById<View>(R.id.fab1) as FloatingActionButton
+                            fab2 = dialog!!.findViewById<View>(R.id.fab2) as FloatingActionButton
+                            fab3 = dialog!!.findViewById<View>(R.id.fab3) as FloatingActionButton
+                            fab4 = dialog!!.findViewById<View>(R.id.fab4) as FloatingActionButton
+                            fab5 = dialog!!.findViewById<View>(R.id.fab5) as FloatingActionButton
+                            fab6 = dialog!!.findViewById<View>(R.id.fab6) as FloatingActionButton
 
-                                val favorited = gson.toJson(favorites, dataList).contains(gson.toJson(selected))
+                            val favorited = gson.toJson(favorites, dataList).contains(gson.toJson(selected))
 
-                                if (favorited) {
-                                    // Is in favorites
-                                    fab5.hide()
-                                    fab6.show()
-                                    if (display.rotation == Surface.ROTATION_0) {
-                                        // Vertical
-                                        val portTranslate = displayMetrics.heightPixels * 0.09f
-                                        fab6.animate().translationX(-portTranslate)
+                            if (favorited) {
+                                // Is in favorites
+                                fab5.hide()
+                                fab6.show()
+                                if (display.rotation == Surface.ROTATION_0) {
+                                    // Vertical
+                                    val portTranslate = displayMetrics.heightPixels * 0.09f
+                                    fab6.animate().translationX(-portTranslate)
+                                } else {
+                                    // Horizontal
+                                    val landTranslate = displayMetrics.heightPixels * 0.15f
+                                    fab6.animate().translationX(-landTranslate)
+                                }
+                            } else {
+                                fab5.show()
+                                fab6.hide()
+                                if (display.rotation == Surface.ROTATION_0) {
+                                    // Vertical
+                                    val portTranslate = displayMetrics.heightPixels * 0.09f
+                                    fab5.animate().translationX(-portTranslate)
+                                } else {
+                                    // Horizontal
+                                    val landTranslate = displayMetrics.heightPixels * 0.15f
+                                    fab5.animate().translationX(-landTranslate)
+                                }
+                            }
+
+
+                            fab.setOnClickListener {
+                                if (!isFABOpen) {
+                                    showFABMenu()
+                                } else {
+                                    closeFABMenu()
+                                }
+                            }
+
+                            fab1.setOnClickListener {
+                                val d = AlertDialog.Builder(this@Main)
+                                        .setTitle("Confirm")
+                                        .setMessage("Do you want to set this wallpaper?")
+                                        .setIcon(getDrawable(R.drawable.ic_wallpaper_white_48dp))
+                                        .setPositiveButton(android.R.string.yes) { _, _ ->
+                                            progressDialog = ProgressDialog.show(this@Main, "Setting Wallpaper", "...", true)
+
+                                            object : Thread() {
+                                                override fun run() {
+                                                    val wallMan = WallpaperManager.getInstance(applicationContext)
+                                                    Looper.prepare()
+                                                    try {
+                                                        wallMan.setBitmap(finalImg)
+                                                        progressDialog!!.dismiss()
+
+                                                        this@Main.runOnUiThread {
+                                                            Toast.makeText(applicationContext,
+                                                                    "Wallpaper set!",
+                                                                    Toast.LENGTH_LONG).show()
+                                                        }
+
+                                                    } catch (e: Exception) {
+                                                        progressDialog!!.dismiss()
+                                                        this@Main.runOnUiThread {
+                                                            Toast.makeText(applicationContext,
+                                                                    "Failed to set wallpaper.",
+                                                                    Toast.LENGTH_LONG).show()
+                                                        }
+                                                    }
+
+                                                }
+                                            }.start()
+                                        }
+                                        .setNegativeButton(android.R.string.no, null).show()
+                                d.window!!.setDimAmount(.8f)
+                                dialog!!.window!!.setDimAmount(.8f)
+                                d.show()
+                            }
+
+                            fab2.setOnClickListener {
+                                val options = arrayOf("Share image", "Share image link", "Share Reddit link")
+                                val d = AlertDialog.Builder(this@Main)
+                                        .setTitle("Share")
+                                        .setItems(options) { dialog, which ->
+                                            when (which) {
+                                                0 ->
+                                                    // Perms
+                                                    if (Build.VERSION.SDK_INT >= 23) {
+                                                        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                                                            shareWallpaperExtStorage(finalImg)
+                                                        } else {
+                                                            currentImg = finalImg
+                                                            ActivityCompat.requestPermissions(this@Main, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 2)
+                                                        }
+                                                    } else {
+                                                        shareWallpaperExtStorage(finalImg)
+                                                    }
+                                                1 -> shareWallpaperLink(selected.imgUrl)
+                                                2 -> shareWallpaperLink(selected.redditSrc)
+                                            }
+                                        }
+                                        .create()
+                                d.window!!.setDimAmount(.8f)
+                                d.show()
+                            }
+
+                            fab3.setOnClickListener {
+                                // Perms
+                                if (Build.VERSION.SDK_INT >= 23) {
+                                    if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                                        writeWallpaperExtStorage(finalImg)
                                     } else {
-                                        // Horizontal
-                                        val landTranslate = displayMetrics.heightPixels * 0.15f
-                                        fab6.animate().translationX(-landTranslate)
+                                        currentImg = finalImg
+                                        ActivityCompat.requestPermissions(this@Main, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 1)
                                     }
                                 } else {
-                                    fab5.show()
-                                    fab6.hide()
-                                    if (display.rotation == Surface.ROTATION_0) {
-                                        // Vertical
-                                        val portTranslate = displayMetrics.heightPixels * 0.09f
-                                        fab5.animate().translationX(-portTranslate)
+                                    writeWallpaperExtStorage(finalImg)
+                                }
+                            }
+
+                            fab4.setOnClickListener {
+                                try {
+                                    // Browser Intent
+                                    val redditPost = Intent(Intent.ACTION_VIEW)
+
+                                    // Type of file to share
+                                    redditPost.data = Uri.parse(selected.redditSrc)
+                                    startActivity(redditPost)
+
+                                } catch (e: Exception) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace()
+                                }
+                            }
+
+                            fab5.setOnClickListener {
+                                try {
+                                    if (favorites.contains(selected)) {
+                                        Toast.makeText(applicationContext,
+                                                "Already in favorites!",
+                                                Toast.LENGTH_LONG).show()
                                     } else {
-                                        // Horizontal
-                                        val landTranslate = displayMetrics.heightPixels * 0.15f
-                                        fab5.animate().translationX(-landTranslate)
-                                    }
-                                }
-
-
-                                fab.setOnClickListener {
-                                    if (!isFABOpen) {
-                                        showFABMenu()
-                                    } else {
-                                        closeFABMenu()
-                                    }
-                                }
-
-                                fab1.setOnClickListener {
-                                    val d = AlertDialog.Builder(this@Main)
-                                            .setTitle("Confirm")
-                                            .setMessage("Do you want to set this wallpaper?")
-                                            .setIcon(getDrawable(R.drawable.ic_wallpaper_white_48dp))
-                                            .setPositiveButton(android.R.string.yes) { dialog, whichButton ->
-                                                progressDialog = ProgressDialog.show(this@Main, "Setting Wallpaper", "...", true)
-
-                                                object : Thread() {
-                                                    override fun run() {
-                                                        val wallMan = WallpaperManager.getInstance(applicationContext)
-                                                        Looper.prepare()
-                                                        try {
-                                                            wallMan.setBitmap(finalImg)
-                                                            progressDialog!!.dismiss()
-
-                                                            this@Main.runOnUiThread {
-                                                                Toast.makeText(applicationContext,
-                                                                        "Wallpaper set!",
-                                                                        Toast.LENGTH_LONG).show()
-                                                            }
-
-                                                        } catch (e: Exception) {
-                                                            progressDialog!!.dismiss()
-                                                            this@Main.runOnUiThread {
-                                                                Toast.makeText(applicationContext,
-                                                                        "Failed to set wallpaper.",
-                                                                        Toast.LENGTH_LONG).show()
-                                                            }
-                                                        }
-
-                                                    }
-                                                }.start()
-                                            }
-                                            .setNegativeButton(android.R.string.no, null).show()
-                                    d.window!!.setDimAmount(.8f)
-                                    dialog!!.window!!.setDimAmount(.8f)
-                                    d.show()
-                                }
-
-                                fab2.setOnClickListener {
-                                    val options = arrayOf("Share image", "Share image link", "Share Reddit link")
-                                    val d = AlertDialog.Builder(this@Main)
-                                            .setTitle("Share")
-                                            .setItems(options) { dialog, which ->
-                                                when (which) {
-                                                    0 ->
-                                                        // Perms
-                                                        if (Build.VERSION.SDK_INT >= 23) {
-                                                            if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                                                                shareWallpaperExtStorage(finalImg)
-                                                            } else {
-                                                                currentImg = finalImg
-                                                                ActivityCompat.requestPermissions(this@Main, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 2)
-                                                            }
-                                                        } else {
-                                                            shareWallpaperExtStorage(finalImg)
-                                                        }
-                                                    1 -> shareWallpaperLink(selected.imgUrl)
-                                                    2 -> shareWallpaperLink(selected.redditSrc)
-                                                }
-                                            }
-                                            .create()
-                                    d.window!!.setDimAmount(.8f)
-                                    d.show()
-                                }
-
-                                fab3.setOnClickListener {
-                                    // Perms
-                                    if (Build.VERSION.SDK_INT >= 23) {
-                                        if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                                            writeWallpaperExtStorage(finalImg)
-                                        } else {
-                                            currentImg = finalImg
-                                            ActivityCompat.requestPermissions(this@Main, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 1)
-                                        }
-                                    } else {
-                                        writeWallpaperExtStorage(finalImg)
-                                    }
-                                }
-
-                                fab4.setOnClickListener {
-                                    try {
-                                        // Browser Intent
-                                        val redditPost = Intent(Intent.ACTION_VIEW)
-
-                                        // Type of file to share
-                                        redditPost.data = Uri.parse(selected.redditSrc)
-                                        startActivity(redditPost)
-
-                                    } catch (e: Exception) {
-                                        // TODO Auto-generated catch block
-                                        e.printStackTrace()
-                                    }
-                                }
-
-                                fab5.setOnClickListener {
-                                    try {
-                                        if (favorites.contains(selected)) {
-                                            Toast.makeText(applicationContext,
-                                                    "Already in favorites!",
-                                                    Toast.LENGTH_LONG).show()
-                                        } else {
-                                            favorites.add(selected)
-                                            val serial = gson.toJson(favorites, dataList)
-                                            prefsEditor.putString("FAVORITES", serial)
-                                            prefsEditor.apply()
-                                            Toast.makeText(applicationContext,
-                                                    "Added to favorites!",
-                                                    Toast.LENGTH_LONG).show()
-                                        }
-                                    } catch (e: Exception) {
-                                        // TODO Auto-generated catch block
-                                        e.printStackTrace()
-                                    }
-                                }
-
-                                fab6.setOnClickListener {
-                                    try {
-                                        //                                                String serial = gson.toJson(favorites, dataList);
-                                        datas.removeAt(position)
-                                        val serial = gson.toJson(datas, dataList)
+                                        favorites.add(selected)
+                                        val serial = gson.toJson(favorites, dataList)
                                         prefsEditor.putString("FAVORITES", serial)
                                         prefsEditor.apply()
-                                        adapter!!.notifyDataSetChanged()
-                                        dialog!!.dismiss()
-                                        if (datas.size == 0) {
-                                            restartMain(false)
-                                        }
                                         Toast.makeText(applicationContext,
-                                                "Removed from favorites",
+                                                "Added to favorites!",
                                                 Toast.LENGTH_LONG).show()
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
                                     }
+                                } catch (e: Exception) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace()
                                 }
-
-                                close.setOnClickListener {
-                                    isFABOpen = false
-                                    dialog!!.dismiss()
-                                    if (prefs.getBoolean("FULLSCREEN", false)) {
-                                        immersiveFullscreen()
-                                    } else {
-                                        nonFullscreen()
-                                    }
-                                }
-                                progressDialog!!.dismiss()
                             }
-                        } catch (ex: Exception) {
 
+                            fab6.setOnClickListener {
+                                try {
+                                    //                                                String serial = gson.toJson(favorites, dataList);
+                                    datas.removeAt(position)
+                                    val serial = gson.toJson(datas, dataList)
+                                    prefsEditor.putString("FAVORITES", serial)
+                                    prefsEditor.apply()
+                                    adapter!!.notifyDataSetChanged()
+                                    dialog!!.dismiss()
+                                    if (datas.size == 0) {
+                                        restartMain(false)
+                                    }
+                                    Toast.makeText(applicationContext,
+                                            "Removed from favorites",
+                                            Toast.LENGTH_LONG).show()
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+
+                            close.setOnClickListener {
+                                isFABOpen = false
+                                dialog!!.dismiss()
+                                if (prefs.getBoolean("FULLSCREEN", false)) {
+                                    immersiveFullscreen()
+                                } else {
+                                    nonFullscreen()
+                                }
+                            }
+                            progressDialog!!.dismiss()
                         }
+                    } catch (ex: Exception) {
 
                     }
-                }.start()
-            }
-        })
+                }
+            }.start()
+        }
     }
 
     private fun showFABMenu() {
@@ -823,7 +814,7 @@ class Main : AppCompatActivity() {
     }
 
     // External storage
-    internal fun fixMediaDir() {
+    private fun fixMediaDir() {
         val sdcard = Environment.getExternalStorageDirectory()
         if (sdcard != null) {
             val mediaDir = File(sdcard, "DCIM/Camera")
@@ -837,7 +828,7 @@ class Main : AppCompatActivity() {
 
     // Rebuild index with new sub metadata
     //
-    fun setFavoriteSubs() {
+    private fun setFavoriteSubs() {
         selectedString = ""
         for (i in selectedSubs) {
             selectedString += "$i%2C"
@@ -861,16 +852,9 @@ class Main : AppCompatActivity() {
         startActivity(intent)
     }
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        return super.onTouchEvent(event)
-    }
-
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.main, menu)
-        if (navigationView.findViewById<View>(R.id.nsfw_toggle) as RelativeLayout == null) {
-            finish()
-        }
 
         navigationView.menu.findItem(R.id.nav_subs).isVisible = !viewingFavorites
         navigationView.menu.findItem(R.id.nav_favorites).isVisible = !viewingFavorites
@@ -883,40 +867,34 @@ class Main : AppCompatActivity() {
         fullScreenToggle.isChecked = prefs.getBoolean("FULLSCREEN", false)
         titlesToggle.isChecked = prefs.getBoolean("SHOW_TITLES", true)
 
-        nsfwToggle.setOnClickListener(object : View.OnClickListener {
-            override fun onClick(view: View) {
-                prefsEditor.putBoolean("SHOW_NSFW", !prefs.getBoolean("SHOW_NSFW", false))
-                prefsEditor.apply()
-                val intent = intent
-                finish()
-                overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-                startActivity(intent)
-                overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-            }
-        })
-        fullScreenToggle.setOnClickListener(object : View.OnClickListener {
-            override fun onClick(view: View) {
-                prefsEditor.putBoolean("FULLSCREEN", !prefs.getBoolean("FULLSCREEN", false))
-                prefsEditor.apply()
-                val intent = intent
-                finish()
-                overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-                startActivity(intent)
-                overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-            }
-        })
-        titlesToggle.setOnClickListener(object : View.OnClickListener {
-            override fun onClick(view: View) {
-                prefsEditor.putBoolean("SHOW_TITLES", !prefs.getBoolean("SHOW_TITLES", true))
-                prefsEditor.apply()
-                val intent = intent
+        nsfwToggle.setOnClickListener {
+            prefsEditor.putBoolean("SHOW_NSFW", !prefs.getBoolean("SHOW_NSFW", false))
+            prefsEditor.apply()
+            val intent = intent
+            finish()
+            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+            startActivity(intent)
+            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+        }
+        fullScreenToggle.setOnClickListener {
+            prefsEditor.putBoolean("FULLSCREEN", !prefs.getBoolean("FULLSCREEN", false))
+            prefsEditor.apply()
+            val intent = intent
+            finish()
+            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+            startActivity(intent)
+            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+        }
+        titlesToggle.setOnClickListener {
+            prefsEditor.putBoolean("SHOW_TITLES", !prefs.getBoolean("SHOW_TITLES", true))
+            prefsEditor.apply()
+            val intent = intent
 
-                finish()
-                overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-                startActivity(intent)
-                overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-            }
-        })
+            finish()
+            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+            startActivity(intent)
+            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+        }
         return true
     }
 
@@ -938,13 +916,13 @@ class Main : AppCompatActivity() {
                         data.width = ja.getJSONObject(i).getInt("width")
                         data.height = ja.getJSONObject(i).getInt("height")
                         data.rat = 1.0 * data.height / data.width
-                        data.thumbImgUrl = ja.getJSONObject(i).getString("thumb") + "_" + thumbnail_size + "_" + thumbnail_size + ".jpg"
+                        data.thumbImgUrl = ja.getJSONObject(i).getString("thumb") + "_" + thumbnailSize + "_" + thumbnailSize + ".jpg"
 
                         // Metadata
                         data.score = Formatter.shortHandFormatter(Integer.parseInt(ja.getJSONObject(i).getString("score")))
                         data.nsfw = ja.getJSONObject(i).getBoolean("nsfw")
                         data.redditSrc = "https://redd.it/" + ja.getJSONObject(i).getString("externalId")
-                        data.title = ja.getJSONObject(i).getString("title").replace("\\s*\\[.+?\\]\\s*".toRegex(), "").replace("&amp;", "&") //+"\n("+data.score+"\uD83D\uDD3A)";
+                        data.title = ja.getJSONObject(i).getString("title").replace("\\s*\\[.+?]\\s*".toRegex(), "").replace("&amp;", "&") //+"\n("+data.score+"\uD83D\uDD3A)";
                         data.series = ja.getJSONObject(i).getString("title").replace("^[^\\[]*".toRegex(), "").replace("&amp;", "&")
 
                         if (i == pageSize - 1) {
@@ -971,7 +949,7 @@ class Main : AppCompatActivity() {
         if (loadingMore) {
 
             //IMPLEMENT STOP LOADING ONCE ARRAYSIZE < PAGESIZE
-            if (jas == null || jas.size == 0) {
+            if (jas.isEmpty()) {
                 loadingMore = false
             } else {
                 for (i in jas.indices) {
@@ -1000,13 +978,10 @@ class Main : AppCompatActivity() {
                                 data.title = post.getString("title").replace("&amp;", "&")
 
                                 datas.add(data)
-                            } else {
-
                             }
                         } catch (ex: Exception) {
                             ex.printStackTrace()
                         }
-
                     }
                 }
             }
@@ -1022,8 +997,8 @@ class Main : AppCompatActivity() {
         val time = System.nanoTime()
 
         val values = ContentValues()
-        values.put(MediaStore.Images.Media.TITLE, java.lang.Long.toString(time))
-        values.put(MediaStore.Images.Media.DISPLAY_NAME, java.lang.Long.toString(time))
+        values.put(MediaStore.Images.Media.TITLE, time.toString())
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, time.toString())
         values.put(MediaStore.Images.Media.DESCRIPTION, "")
         values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
         values.put(MediaStore.Images.Media.DATE_ADDED, time)
@@ -1045,29 +1020,27 @@ class Main : AppCompatActivity() {
                 }
 
                 Toast.makeText(applicationContext,
-                        "Saved image " + java.lang.Long.toString(time) + " to gallery",
+                        "Saved image $time to gallery",
                         Toast.LENGTH_LONG).show()
             } else {
                 Toast.makeText(applicationContext,
-                        "Failed to save image " + java.lang.Long.toString(time) + " to gallery",
+                        "Failed to save image $time to gallery",
                         Toast.LENGTH_LONG).show()
                 contentResolver.delete(uri!!, null, null)
                 uri = null
             }
         } catch (e: Exception) {
             Toast.makeText(applicationContext,
-                    "Failed to save image " + java.lang.Long.toString(time) + " to gallery",
+                    "Failed to save image $time to gallery",
                     Toast.LENGTH_LONG).show()
             if (uri != null) {
                 contentResolver.delete(uri, null, null)
-                uri = null
             }
         }
-
     }
 
     fun shareWallpaperLink(url: String) {
-        val share = Intent(android.content.Intent.ACTION_SEND)
+        val share = Intent(Intent.ACTION_SEND)
         share.type = "text/plain"
         share.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET)
 
@@ -1119,14 +1092,14 @@ class Main : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         when (requestCode) {
-            1 -> if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            1 -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 writeWallpaperExtStorage(currentImg)
             } else {
                 Toast.makeText(applicationContext,
                         "Permission to save images was not granted",
                         Toast.LENGTH_LONG).show()
             }
-            2 -> if (grantResults.size > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            2 -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 shareWallpaperExtStorage(currentImg)
             } else {
                 Toast.makeText(applicationContext,
@@ -1146,7 +1119,6 @@ class Main : AppCompatActivity() {
             val value = from + (to - from) * interpolatedTime
             progressBar.progress = value.toInt()
         }
-
     }
 
     /*
@@ -1164,13 +1136,11 @@ class Main : AppCompatActivity() {
                         .timeout(6000000)
                         .get()
                 redditSubs = doc.select("script")
-                var i = 0
-                for (sub in redditSubs) {
+                for ((i, sub) in redditSubs.withIndex()) {
                     val at = sub.toString()
                     if (i == 2) {
                         subsJSON = at
                     }
-                    i++
                 }
 
                 subsJSON = subsJSON.substring(subsJSON.indexOf("["))
@@ -1222,10 +1192,18 @@ class Main : AppCompatActivity() {
                     prefsEditor.apply()
                 } catch (ex: Exception) {
                     //                ex.printStackTrace();
-                    subsMap[s.subID] = Sub(s.subName, s.subID, 0, s.selected, false, false, "")
+                    subsMap[s.subID] = Sub(
+                            s.subName,
+                            s.subID,
+                            0,
+                            s.selected,
+                            isNSFW = false,
+                            isCustom = false,
+                            desc = ""
+                    )
                 }
 
-                publishProgress(Math.ceil(prog * 1.0 / subsMap.values.size * 100.0 * progressBarScale.toDouble()).toInt())
+                publishProgress(ceil(prog * 1.0 / subsMap.values.size * 100.0 * progressBarScale.toDouble()).toInt())
                 prog++
             }
             return null
@@ -1247,7 +1225,7 @@ class Main : AppCompatActivity() {
             this@Main.runOnUiThread { detProgressBar.visibility = View.VISIBLE }
         }
 
-        protected override fun onProgressUpdate(vararg values: Int?) {
+        override fun onProgressUpdate(vararg values: Int?) {
             val anim = ProgressBarAnimation(detProgressBar, detProgressBar.progress.toFloat(), values[0]!!.toFloat())
             anim.duration = 1000
             this@Main.runOnUiThread { detProgressBar.startAnimation(anim) }
@@ -1255,7 +1233,6 @@ class Main : AppCompatActivity() {
     }
 
     private inner class DownloadImage internal constructor(internal var bmImage: InteractiveImageView) : AsyncTask<String, Void, Bitmap>() {
-        internal var pDialog: ProgressDialog? = null
 
         override fun onPreExecute() {}
 
@@ -1263,7 +1240,7 @@ class Main : AppCompatActivity() {
             val urldisplay = urls[0]
             var img: Bitmap? = null
             try {
-                val `in` = java.net.URL(urldisplay).openStream()
+                val `in` = URL(urldisplay).openStream()
                 img = BitmapFactory.decodeStream(`in`)
                 val bitmapSize = img!!.byteCount
                 if (bitmapSize > MAX_BITMAP_SIZE) {
@@ -1285,15 +1262,15 @@ class Main : AppCompatActivity() {
     }
 
     inner class LoadMorePhotos : AsyncTask<Void, Void, Void>() {
-        internal lateinit var tmp: JSONArray
-        internal var customTmp = arrayOfNulls<JSONArray>(selectedCustomSubs.size)
+        private lateinit var tmp: JSONArray
+        private var customTmp = arrayOfNulls<JSONArray>(selectedCustomSubs.size)
 
         override fun doInBackground(vararg arg0: Void): Void? {
             // set loadingMore flag
             loadingMore = true
 
             // Increment current page
-            current_page += 1
+            currentPage += 1
 
             // Normal subs: via Redditbooru
             if (selectedSubs.size == 0 && selectedCustomSubs.size == 0 || selectedSubs.size != 0) {
@@ -1385,20 +1362,17 @@ class Main : AppCompatActivity() {
 
     companion object {
 
-        val MAX_BITMAP_SIZE = 100 * 1024 * 1024 // 100 MB
-        val DEFAULT_COLUMNS_PORTRAIT = 2
-        val DEFAULT_COLUMNS_LANDSCAPE = 3
-        val MAX_COLUMNS_PORTRAIT = 6
-        val MAX_COLUMNS_LANDSCAPE = 6
-        val MIN_COLUMNS_PORTRAIT = 1
-        val MIN_COLUMNS_LANDSCAPE = 2
+        const val MAX_BITMAP_SIZE = 100 * 1024 * 1024 // 100 MB
+        const val DEFAULT_COLUMNS_PORTRAIT = 2
+        const val DEFAULT_COLUMNS_LANDSCAPE = 3
+        const val MAX_COLUMNS_PORTRAIT = 6
+        const val MAX_COLUMNS_LANDSCAPE = 6
+        const val MIN_COLUMNS_PORTRAIT = 1
+        const val MIN_COLUMNS_LANDSCAPE = 2
 
         @TargetApi(Build.VERSION_CODES.HONEYCOMB) // API 11
         fun <T> executeAsyncTask(asyncTask: AsyncTask<T, *, *>, vararg params: T) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-                asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, *params)
-            else
-                asyncTask.execute(*params)
+            asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, *params)
         }
     }
 }

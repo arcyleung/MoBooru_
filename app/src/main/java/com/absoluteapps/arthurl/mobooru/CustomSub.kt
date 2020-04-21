@@ -10,7 +10,7 @@ class CustomSub : Sub() {
     }
 
     // Store in format r/xyz
-    var subAddress = ""
+    private var subAddress = ""
 
     init {
         subAddress = ""

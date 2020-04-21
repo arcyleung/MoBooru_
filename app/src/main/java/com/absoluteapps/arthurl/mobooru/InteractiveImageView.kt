@@ -7,8 +7,7 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
-import android.view.View
-import android.widget.ImageView
+import kotlin.math.abs
 
 class InteractiveImageView : androidx.appcompat.widget.AppCompatImageView {
     //Scaling and transformation
@@ -16,23 +15,23 @@ class InteractiveImageView : androidx.appcompat.widget.AppCompatImageView {
 
     internal var mode = NONE
 
-    internal var last = PointF()
-    internal var start = PointF()
+    private var last = PointF()
+    private var start = PointF()
     internal var minScale = .5f
     internal var maxScale = 5f
-    internal lateinit var m: FloatArray
+    private lateinit var m: FloatArray
     internal var viewWidth: Int = 0
     internal var viewHeight: Int = 0
 
     internal var saveScale = 1f
 
-    protected var origWidth: Float = 0.toFloat()
-    protected var origHeight: Float = 0.toFloat()
+    private var origWidth: Float = 0.toFloat()
+    private var origHeight: Float = 0.toFloat()
 
-    internal var oldMeasuredWidth: Int = 0
-    internal var oldMeasuredHeight: Int = 0
+    private var oldMeasuredWidth: Int = 0
+    private var oldMeasuredHeight: Int = 0
 
-    internal lateinit var mScaleDetector: ScaleGestureDetector
+    private lateinit var mScaleDetector: ScaleGestureDetector
     internal lateinit var context: Context
 
     constructor(context: Context) : super(context) {
@@ -57,7 +56,7 @@ class InteractiveImageView : androidx.appcompat.widget.AppCompatImageView {
 
         imageMatrix = matrix
 
-        scaleType = ImageView.ScaleType.MATRIX
+        scaleType = ScaleType.MATRIX
 
         setOnTouchListener { _, event ->
             mScaleDetector.onTouchEvent(event)
@@ -99,9 +98,9 @@ class InteractiveImageView : androidx.appcompat.widget.AppCompatImageView {
 
                     mode = NONE
 
-                    val xDiff = Math.abs(curr.x - start.x).toInt()
+                    val xDiff = abs(curr.x - start.x).toInt()
 
-                    val yDiff = Math.abs(curr.y - start.y).toInt()
+                    val yDiff = abs(curr.y - start.y).toInt()
 
                     if (xDiff < CLICK && yDiff < CLICK)
 
@@ -119,12 +118,6 @@ class InteractiveImageView : androidx.appcompat.widget.AppCompatImageView {
 
             true // indicate event was handled
         }
-    }
-
-    fun setMaxZoom(x: Float) {
-
-        maxScale = x
-
     }
 
     private inner class ScaleListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
@@ -193,7 +186,7 @@ class InteractiveImageView : androidx.appcompat.widget.AppCompatImageView {
     }
 
 
-    internal fun getFixTrans(trans: Float, viewSize: Float, contentSize: Float): Float {
+    private fun getFixTrans(trans: Float, viewSize: Float, contentSize: Float): Float {
 
         val minTrans: Float
         val maxTrans: Float
@@ -220,7 +213,7 @@ class InteractiveImageView : androidx.appcompat.widget.AppCompatImageView {
 
     }
 
-    internal fun getFixDragTrans(delta: Float, viewSize: Float, contentSize: Float): Float {
+    private fun getFixDragTrans(delta: Float, viewSize: Float, contentSize: Float): Float {
 
         return if (contentSize <= viewSize) {
 
@@ -234,9 +227,9 @@ class InteractiveImageView : androidx.appcompat.widget.AppCompatImageView {
 
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
 
-        viewWidth = View.MeasureSpec.getSize(widthMeasureSpec)
+        viewWidth = MeasureSpec.getSize(widthMeasureSpec)
 
-        viewHeight = View.MeasureSpec.getSize(heightMeasureSpec)
+        viewHeight = MeasureSpec.getSize(heightMeasureSpec)
 
         //
         // Rescales image on rotation
@@ -273,7 +266,7 @@ class InteractiveImageView : androidx.appcompat.widget.AppCompatImageView {
 
             val scaleY = viewHeight.toFloat() / bmHeight.toFloat()
 
-            scale = Math.min(scaleX, scaleY)
+            scale = scaleX.coerceAtMost(scaleY)
 
             matrix.setScale(scale, scale)
 
@@ -303,11 +296,11 @@ class InteractiveImageView : androidx.appcompat.widget.AppCompatImageView {
 
     companion object {
 
-        internal val NONE = 0
-        internal val DRAG = 1
-        internal val ZOOM = 2
+        internal const val NONE = 0
+        internal const val DRAG = 1
+        internal const val ZOOM = 2
 
-        internal val CLICK = 3
+        internal const val CLICK = 3
     }
 
 } 

@@ -1,5 +1,7 @@
 package com.absoluteapps.arthurl.mobooru
 
+import kotlin.math.roundToInt
+
 object Formatter {
 
     // Converts and rounds:
@@ -9,9 +11,9 @@ object Formatter {
         return if (value < 1000) {
             "$value "
         } else if (value < 1000000) {
-            (Math.round((value / 100).toFloat()) / (1.0 * 10)).toString() + "k "
+            ((value / 100).toFloat().roundToInt() / (1.0 * 10)).toString() + "k "
         } else {
-            (Math.round((value / 100000).toFloat()) / (1.0 * 10)).toString() + "M "
+            ((value / 100000).toFloat().roundToInt() / (1.0 * 10)).toString() + "M "
         }
     }
 }
