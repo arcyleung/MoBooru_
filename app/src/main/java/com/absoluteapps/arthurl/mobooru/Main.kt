@@ -93,15 +93,15 @@ class Main : AppCompatActivity() {
     internal var progressDialog: ProgressDialog? = null
     internal var dialog: Dialog? = null
     internal lateinit var toolbar: Toolbar
-    internal lateinit var close: FloatingActionButton
-    internal lateinit var fab: FloatingActionButton
-    internal lateinit var fab1: FloatingActionButton
-    internal lateinit var fab2: FloatingActionButton
-    internal lateinit var fab3: FloatingActionButton
-    internal lateinit var fab4: FloatingActionButton
-    internal lateinit var fab5: FloatingActionButton
-    internal lateinit var fab6: FloatingActionButton
-    internal var isFABOpen: Boolean = false
+    internal lateinit var closeFAB: FloatingActionButton
+    internal lateinit var expandFAB: FloatingActionButton
+    internal lateinit var wallpaperFAB: FloatingActionButton
+    internal lateinit var shareFAB: FloatingActionButton
+    internal lateinit var saveFAB: FloatingActionButton
+    internal lateinit var sourceFAB: FloatingActionButton
+    internal lateinit var favoriteFAB: FloatingActionButton
+    internal lateinit var unfavoriteFAB: FloatingActionButton
+    internal var isExpanded: Boolean = false
     private lateinit var navigationView: NavigationView
     private lateinit var staggeredGridView: StaggeredGridView
     internal lateinit var drawerLayout: DrawerLayout
@@ -195,6 +195,7 @@ class Main : AppCompatActivity() {
             toolbar.visibility = if (!prefs.getBoolean("FULLSCREEN", false)) {
                 View.VISIBLE
             } else View.GONE
+            System.out.println("Visibility: " + toolbar.visibility)
             showTitles = prefs.getBoolean("SHOW_TITLES", true)
             thumbnailSize = prefs.getInt("THUMBNAIL_SIZE", 300)
 
@@ -423,7 +424,7 @@ class Main : AppCompatActivity() {
                     Toast.LENGTH_LONG).show()
         }
 
-        this@Main.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+        this@Main.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
 
         calcScreenSize()
         val builder = StrictMode.VmPolicy.Builder()
@@ -534,7 +535,7 @@ class Main : AppCompatActivity() {
             dialog!!.requestWindowFeature(Window.FEATURE_NO_TITLE)
             val selected = datas[position]
             val zoomImageView = InteractiveImageView(this@Main)
-            isFABOpen = false
+            isExpanded = false
             progressDialog = ProgressDialog.show(this@Main, "Downloading", "...", true)
 
             object : Thread() {
@@ -580,54 +581,54 @@ class Main : AppCompatActivity() {
                             dialog!!.window!!.setDimAmount(.9f)
                             dialog!!.show()
 
-                            close = dialog!!.findViewById<View>(R.id.imageClose) as FloatingActionButton
-                            fab = dialog!!.findViewById<View>(R.id.fab) as FloatingActionButton
-                            fab1 = dialog!!.findViewById<View>(R.id.fab1) as FloatingActionButton
-                            fab2 = dialog!!.findViewById<View>(R.id.fab2) as FloatingActionButton
-                            fab3 = dialog!!.findViewById<View>(R.id.fab3) as FloatingActionButton
-                            fab4 = dialog!!.findViewById<View>(R.id.fab4) as FloatingActionButton
-                            fab5 = dialog!!.findViewById<View>(R.id.fab5) as FloatingActionButton
-                            fab6 = dialog!!.findViewById<View>(R.id.fab6) as FloatingActionButton
+                            closeFAB = dialog!!.findViewById<View>(R.id.imageClose) as FloatingActionButton
+                            expandFAB = dialog!!.findViewById<View>(R.id.fab) as FloatingActionButton
+                            wallpaperFAB = dialog!!.findViewById<View>(R.id.fab1) as FloatingActionButton
+                            shareFAB = dialog!!.findViewById<View>(R.id.fab2) as FloatingActionButton
+                            saveFAB = dialog!!.findViewById<View>(R.id.fab3) as FloatingActionButton
+                            sourceFAB = dialog!!.findViewById<View>(R.id.fab4) as FloatingActionButton
+                            favoriteFAB = dialog!!.findViewById<View>(R.id.fab5) as FloatingActionButton
+                            unfavoriteFAB = dialog!!.findViewById<View>(R.id.fab6) as FloatingActionButton
 
                             val favorited = gson.toJson(favorites, dataList).contains(gson.toJson(selected))
 
                             if (favorited) {
                                 // Is in favorites
-                                fab5.hide()
-                                fab6.show()
+                                favoriteFAB.hide()
+                                unfavoriteFAB.show()
                                 if (display.rotation == Surface.ROTATION_0) {
                                     // Vertical
                                     val portTranslate = displayMetrics.heightPixels * 0.09f
-                                    fab6.animate().translationX(-portTranslate)
+                                    unfavoriteFAB.animate().translationX(-portTranslate)
                                 } else {
                                     // Horizontal
                                     val landTranslate = displayMetrics.heightPixels * 0.15f
-                                    fab6.animate().translationX(-landTranslate)
+                                    unfavoriteFAB.animate().translationX(-landTranslate)
                                 }
                             } else {
-                                fab5.show()
-                                fab6.hide()
+                                favoriteFAB.show()
+                                unfavoriteFAB.hide()
                                 if (display.rotation == Surface.ROTATION_0) {
                                     // Vertical
                                     val portTranslate = displayMetrics.heightPixels * 0.09f
-                                    fab5.animate().translationX(-portTranslate)
+                                    favoriteFAB.animate().translationX(-portTranslate)
                                 } else {
                                     // Horizontal
                                     val landTranslate = displayMetrics.heightPixels * 0.15f
-                                    fab5.animate().translationX(-landTranslate)
+                                    favoriteFAB.animate().translationX(-landTranslate)
                                 }
                             }
 
 
-                            fab.setOnClickListener {
-                                if (!isFABOpen) {
+                            expandFAB.setOnClickListener {
+                                if (!isExpanded) {
                                     showFABMenu()
                                 } else {
                                     closeFABMenu()
                                 }
                             }
 
-                            fab1.setOnClickListener {
+                            wallpaperFAB.setOnClickListener {
                                 val d = AlertDialog.Builder(this@Main)
                                         .setTitle("Confirm")
                                         .setMessage("Do you want to set this wallpaper?")
@@ -667,11 +668,11 @@ class Main : AppCompatActivity() {
                                 d.show()
                             }
 
-                            fab2.setOnClickListener {
+                            shareFAB.setOnClickListener {
                                 val options = arrayOf("Share image", "Share image link", "Share Reddit link")
                                 val d = AlertDialog.Builder(this@Main)
                                         .setTitle("Share")
-                                        .setItems(options) { dialog, which ->
+                                        .setItems(options) { _, which ->
                                             when (which) {
                                                 0 ->
                                                     // Perms
@@ -694,21 +695,21 @@ class Main : AppCompatActivity() {
                                 d.show()
                             }
 
-                            fab3.setOnClickListener {
+                            saveFAB.setOnClickListener {
                                 // Perms
                                 if (Build.VERSION.SDK_INT >= 23) {
                                     if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                                        writeWallpaperExtStorage(finalImg)
+                                        saveToStorage(finalImg)
                                     } else {
                                         currentImg = finalImg
                                         ActivityCompat.requestPermissions(this@Main, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 1)
                                     }
                                 } else {
-                                    writeWallpaperExtStorage(finalImg)
+                                    saveToStorage(finalImg)
                                 }
                             }
 
-                            fab4.setOnClickListener {
+                            sourceFAB.setOnClickListener {
                                 try {
                                     // Browser Intent
                                     val redditPost = Intent(Intent.ACTION_VIEW)
@@ -723,7 +724,7 @@ class Main : AppCompatActivity() {
                                 }
                             }
 
-                            fab5.setOnClickListener {
+                            favoriteFAB.setOnClickListener {
                                 try {
                                     if (favorites.contains(selected)) {
                                         Toast.makeText(applicationContext,
@@ -744,7 +745,7 @@ class Main : AppCompatActivity() {
                                 }
                             }
 
-                            fab6.setOnClickListener {
+                            unfavoriteFAB.setOnClickListener {
                                 try {
                                     //                                                String serial = gson.toJson(favorites, dataList);
                                     datas.removeAt(position)
@@ -764,8 +765,8 @@ class Main : AppCompatActivity() {
                                 }
                             }
 
-                            close.setOnClickListener {
-                                isFABOpen = false
+                            closeFAB.setOnClickListener {
+                                isExpanded = false
                                 dialog!!.dismiss()
                                 if (prefs.getBoolean("FULLSCREEN", false)) {
                                     immersiveFullscreen()
@@ -784,33 +785,33 @@ class Main : AppCompatActivity() {
     }
 
     private fun showFABMenu() {
-        fab.animate().rotation(45f)
-        isFABOpen = true
+        expandFAB.animate().rotation(45f)
+        isExpanded = true
 
         if (display.rotation == Surface.ROTATION_0) {
             // Vertical
             val portTranslate = displayMetrics.heightPixels * 0.09f
-            fab1.animate().translationY(-portTranslate)
-            fab2.animate().translationY(2 * -portTranslate)
-            fab3.animate().translationY(3 * -portTranslate)
-            fab4.animate().translationY(4 * -portTranslate)
+            wallpaperFAB.animate().translationY(-portTranslate)
+            shareFAB.animate().translationY(2 * -portTranslate)
+            saveFAB.animate().translationY(3 * -portTranslate)
+            sourceFAB.animate().translationY(4 * -portTranslate)
         } else {
             // Horizontal
             val landTranslate = displayMetrics.heightPixels * 0.15f
-            fab1.animate().translationY(-landTranslate)
-            fab2.animate().translationY(2 * -landTranslate)
-            fab3.animate().translationY(3 * -landTranslate)
-            fab4.animate().translationY(4 * -landTranslate)
+            wallpaperFAB.animate().translationY(-landTranslate)
+            shareFAB.animate().translationY(2 * -landTranslate)
+            saveFAB.animate().translationY(3 * -landTranslate)
+            sourceFAB.animate().translationY(4 * -landTranslate)
         }
     }
 
     private fun closeFABMenu() {
-        isFABOpen = false
-        fab.animate().rotation(0f)
-        fab1.animate().translationY(0f)
-        fab2.animate().translationY(0f)
-        fab3.animate().translationY(0f)
-        fab4.animate().translationY(0f)
+        isExpanded = false
+        expandFAB.animate().rotation(0f)
+        wallpaperFAB.animate().translationY(0f)
+        shareFAB.animate().translationY(0f)
+        saveFAB.animate().translationY(0f)
+        sourceFAB.animate().translationY(0f)
     }
 
     // External storage
@@ -993,8 +994,8 @@ class Main : AppCompatActivity() {
         Tasks that require permission
      */
 
-    fun writeWallpaperExtStorage(finalImg: Bitmap?) {
-        val time = System.nanoTime()
+    fun saveToStorage(finalImg: Bitmap?) {
+        val time = System.currentTimeMillis()
 
         val values = ContentValues()
         values.put(MediaStore.Images.Media.TITLE, time.toString())
@@ -1093,7 +1094,7 @@ class Main : AppCompatActivity() {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         when (requestCode) {
             1 -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                writeWallpaperExtStorage(currentImg)
+                saveToStorage(currentImg)
             } else {
                 Toast.makeText(applicationContext,
                         "Permission to save images was not granted",
@@ -1165,7 +1166,6 @@ class Main : AppCompatActivity() {
         internal var prog = 0
 
         override fun doInBackground(vararg params: Void): Void? {
-
             for (s in subsMap.values) {
                 var info: String
                 val obj: JSONObject
@@ -1187,9 +1187,6 @@ class Main : AppCompatActivity() {
                             s.isCustom,
                             obj.getString("public_description")
                     )
-                    val serial = gson.toJson(subsMap, intSubMap)
-                    prefsEditor.putString("SUBS", serial)
-                    prefsEditor.apply()
                 } catch (ex: Exception) {
                     //                ex.printStackTrace();
                     subsMap[s.subID] = Sub(
@@ -1202,10 +1199,13 @@ class Main : AppCompatActivity() {
                             desc = ""
                     )
                 }
-
                 publishProgress(ceil(prog * 1.0 / subsMap.values.size * 100.0 * progressBarScale.toDouble()).toInt())
                 prog++
             }
+
+            val serial = gson.toJson(subsMap, intSubMap)
+            prefsEditor.putString("SUBS", serial)
+            prefsEditor.apply()
             return null
         }
 
@@ -1363,10 +1363,10 @@ class Main : AppCompatActivity() {
     companion object {
 
         const val MAX_BITMAP_SIZE = 100 * 1024 * 1024 // 100 MB
-        const val DEFAULT_COLUMNS_PORTRAIT = 2
-        const val DEFAULT_COLUMNS_LANDSCAPE = 3
+        const val DEFAULT_COLUMNS_PORTRAIT = 3
+        const val DEFAULT_COLUMNS_LANDSCAPE = 5
         const val MAX_COLUMNS_PORTRAIT = 6
-        const val MAX_COLUMNS_LANDSCAPE = 6
+        const val MAX_COLUMNS_LANDSCAPE = 8
         const val MIN_COLUMNS_PORTRAIT = 1
         const val MIN_COLUMNS_LANDSCAPE = 2
 

@@ -881,7 +881,7 @@ public class StaggeredGridView extends ExtendableListView {
 
     private int calculateColumnWidth(final int gridWidth) {
         final int listPadding = getRowPaddingLeft() + getRowPaddingRight();
-        return (gridWidth - listPadding - mItemMargin * (mColumnCount + 1)) / mColumnCount;
+        return mColumnCount == 0 ? 0 : (gridWidth - listPadding - mItemMargin * (mColumnCount + 1)) / mColumnCount;
     }
 
     private int calculateColumnLeft(final int colIndex) {

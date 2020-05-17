@@ -10,5 +10,12 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <string name="title_activity_help">Help</string>
+    <string name="help_1">Access the menu by tapping the top left icon or swiping from the left edge</string>
+    <string name="help_2">Share, save, or set as wallpaper!</string>
+    <string name="help_3">Add your own subreddits if they are not listed \n\nPress and hold a subreddit to view its description or delete it</string>
+    <string name="search_subreddits">Search subreddits</string>
+    <string name="subreddit_hint">Enter subreddit e.g. r/animenocontext</string>
+    <string name="all_tab">All</string>
+    <string name="selected_tab">Selected</string>
 
 </resources>

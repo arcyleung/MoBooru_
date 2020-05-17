@@ -18,6 +18,7 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ContextThemeWrapper
 import androidx.appcompat.widget.Toolbar
+import com.google.android.material.tabs.TabLayout
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import org.json.JSONObject
@@ -26,7 +27,7 @@ import java.util.*
 
 class SubSelector : AppCompatActivity() {
 
-    internal lateinit var origList: ArrayList<Sub>
+    internal var origList: ArrayList<Sub> = ArrayList<Sub>()
     internal lateinit var subsList: ArrayList<Sub>
     private lateinit var subsMap: HashMap<Int, Sub>
     internal lateinit var customSubsMap: HashMap<Int, Sub>
@@ -37,6 +38,7 @@ class SubSelector : AppCompatActivity() {
     private lateinit var mInfo: ImageButton
     private lateinit var mAddCustomSub: ImageButton
     private lateinit var mEditText: EditText
+    private lateinit var mTabLayout: TabLayout
     internal var hashSetMap = object : TypeToken<HashSet<Int>>() {
 
     }.type
@@ -52,6 +54,7 @@ class SubSelector : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings_subs)
         mEditText = findViewById<View>(R.id.search) as EditText
+        mTabLayout = findViewById<View>(R.id.tabLayout) as TabLayout
         mAddCustomSub = findViewById<View>(R.id.addCustomSub) as ImageButton
         //        mClearText = (Button) findViewById(R.id.clearText);
         mInfo = findViewById<View>(R.id.info) as ImageButton
@@ -83,13 +86,12 @@ class SubSelector : AppCompatActivity() {
         mInfo.setOnClickListener {
             val d1 = AlertDialog.Builder(ContextThemeWrapper(this@SubSelector, R.style.AppTheme))
                     .setTitle("Tips")
-                    .setNegativeButton("Back") { dialog, which ->
+                    .setNegativeButton("Back") { _, _ ->
                         // do nothing
                     }
                     .setIcon(R.drawable.baseline_help_outline_black_36)
                     .setMessage("Check the subreddits you'd like to see pictures from; press and hold each subreddit to see its description!")
                     .create()
-
             d1.show()
         }
 
@@ -103,13 +105,13 @@ class SubSelector : AppCompatActivity() {
             val edt = dialogView.findViewById<View>(R.id.subEntry) as EditText
 
             dialogBuilder.setTitle("Add subreddit")
-            dialogBuilder.setPositiveButton("Done") { dialog, whichButton ->
+            dialogBuilder.setPositiveButton("Done") { _, _ ->
                 progressDialog = ProgressDialog.show(this@SubSelector, "Adding sub", "...", true)
                 addCustomSubTask = AddCustomSub(edt.text.toString())
                 addCustomSubTask.execute()
                 imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0)
             }
-            dialogBuilder.setNegativeButton("Cancel") { dialog, whichButton -> imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0) }
+            dialogBuilder.setNegativeButton("Cancel") { _, _ -> imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0) }
             val b = dialogBuilder.create()
             b.show()
             edt.requestFocus()
@@ -120,7 +122,9 @@ class SubSelector : AppCompatActivity() {
         // List of subs
         subsMap = intent.getSerializableExtra("subsMap") as HashMap<Int, Sub>
         customSubsMap = intent.getSerializableExtra("customSubsMap") as HashMap<Int, Sub>
-        origList = ArrayList(subsMap.values)
+        origList.addAll(subsMap.values)
+        origList.addAll(customSubsMap.values)
+        origList.sort()
 
         // Checked favorite subs <sub_id, checked>
         prefs = PreferenceManager.getDefaultSharedPreferences(baseContext)
@@ -142,7 +146,9 @@ class SubSelector : AppCompatActivity() {
 
         subsList = ArrayList(subsMap.values)
         subsList.addAll(customSubsMap.values)
+        subsList.sort()
         displayList()
+        updateTabs()
         buttonPressed()
     }
 
@@ -158,7 +164,6 @@ class SubSelector : AppCompatActivity() {
         // as you specify a parent activity in AndroidManifest.xml.
         val id = item.itemId
 
-
         return if (id == R.id.action_settings) {
             true
         } else super.onOptionsItemSelected(item)
@@ -172,14 +177,35 @@ class SubSelector : AppCompatActivity() {
         finish()
     }
 
+    private fun updateTabs() {
+        mTabLayout.getTabAt(0)!!.text = "ALL (${origList.size})"
+        mTabLayout.getTabAt(1)!!.text = "SELECTED (${selectedCustomSubs.size + selectedSubs.size})"
+    }
+
     private fun displayList() {
-        subsList.sort()
         adp = CustomAdapter(this, R.layout.activity_settings_subs_checkboxes, subsList)
         val lv = findViewById<View>(R.id.listView) as ListView
         lv.adapter = adp
 
-        // Locate the EditText in listview_main.xml
+        // Locate the EditText in activity_settings_subs.xml
         val editSearch = findViewById<View>(R.id.search) as EditText
+
+        // Locate the TabLayout in activity_settings_subs.xml
+
+        mTabLayout.addOnTabSelectedListener(object :
+                TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) {
+                adp!!.filter("", mTabLayout.selectedTabPosition == 1)
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab) {
+
+            }
+
+            override fun onTabReselected(tab: TabLayout.Tab) {
+
+            }
+        })
 
         // Capture Text in EditText
         editSearch.addTextChangedListener(object : TextWatcher {
@@ -187,8 +213,7 @@ class SubSelector : AppCompatActivity() {
             override fun afterTextChanged(arg0: Editable) {
                 // TODO Auto-generated method stub
                 val text = editSearch.text.toString().toLowerCase(Locale.getDefault())
-                adp!!.filter(text)
-                subsList.sort()
+                adp!!.filter(text, mTabLayout.selectedTabPosition == 1)
             }
 
             override fun beforeTextChanged(arg0: CharSequence, arg1: Int,
@@ -229,6 +254,13 @@ class SubSelector : AppCompatActivity() {
                 } else {
                     selectedSubs.remove(sub.subID)
                 }
+
+                // If we are showing only selected subs, update the ListView adapter data
+                // TODO: refactor with enum
+                if (mTabLayout.selectedTabPosition == 1) {
+                    subsList.remove(sub)
+                    adp!!.notifyDataSetChanged()
+                }
             } else {
                 if (sub.isCustom) {
                     selectedCustomSubs.add(sub.subID)
@@ -236,9 +268,9 @@ class SubSelector : AppCompatActivity() {
                     selectedSubs.add(sub.subID)
                 }
             }
+            updateTabs()
             cb.isChecked = !isSelected
             sub.selected = !isSelected
-            subsList.sort()
             adp!!.notifyDataSetChanged()
         }
 
@@ -264,7 +296,7 @@ class SubSelector : AppCompatActivity() {
                             subsList.remove(sub)
 
                             adp!!.notifyDataSetChanged()
-
+                            updateTabs()
                             Toast.makeText(this@SubSelector, "Removed " + sub.subName, Toast.LENGTH_SHORT).show()
                         }
                         .setMessage(if (sub.desc.isNotEmpty()) sub.desc else "No description")
@@ -306,7 +338,11 @@ class SubSelector : AppCompatActivity() {
         prefsEditor.apply()
     }
 
-    inner class CustomAdapter(context: Context, textViewResourceId: Int, val subsList: ArrayList<Sub>) : ArrayAdapter<Sub>(context, textViewResourceId, subsList) {
+    inner class CustomAdapter(context: Context, textViewResourceId: Int, var subsList: ArrayList<Sub>) : ArrayAdapter<Sub>(context, textViewResourceId, subsList) {
+
+        override fun getCount(): Int {
+            return subsList.size
+        }
 
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
             var convertView = convertView
@@ -338,19 +374,22 @@ class SubSelector : AppCompatActivity() {
         }
 
         // Filter Class
-        fun filter(charText: String) {
-            var charText = charText
-            charText = charText.toLowerCase(Locale.getDefault())
+        fun filter(searchString: String, onlySelected: Boolean) {
+            var lower = searchString.toLowerCase(Locale.getDefault())
+            var tmp: ArrayList<Sub> = ArrayList<Sub>()
             subsList.clear()
-            if (charText.isEmpty()) {
-                subsList.addAll(origList)
-            } else {
-                for (s in origList) {
-                    if (s.subName.contains(charText)) {
-                        subsList.add(s)
-                    }
-                }
+            tmp.addAll(origList)
+
+            // Only show selected subs
+            if (onlySelected) {
+                tmp = tmp.filter { s -> s.selected == onlySelected } as ArrayList<Sub>
             }
+
+            // Has search term
+            if (!lower.isEmpty()) {
+                tmp = tmp.filter { s -> s.subName.contains(lower) } as ArrayList<Sub>
+            }
+            subsList.addAll(tmp)
             notifyDataSetChanged()
         }
 
@@ -420,8 +459,12 @@ class SubSelector : AppCompatActivity() {
                     prefsEditor.apply()
                     origList.add(newSub)
                     subsList.add(newSub)
+                    subsList.sort()
 
-                    runOnUiThread { displayList() }
+                    runOnUiThread {
+                        displayList()
+                        updateTabs()
+                    }
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()

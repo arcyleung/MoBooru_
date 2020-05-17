@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
+    xmlns:tools="http://schemas.android.com/tools" android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:descendantFocusability="beforeDescendants"
@@ -10,13 +10,10 @@
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/subs_toolbar"
         android:layout_width="match_parent"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true"
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
         android:popupTheme="@style/AppTheme"
-        android:minHeight="?attr/actionBarSize">
+        android:minHeight="?attr/actionBarSize" tools:targetApi="lollipop">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -29,55 +26,70 @@
                 android:id="@+id/search"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="0dp"
+                android:layout_marginEnd="0dp"
                 android:layout_weight="0.96"
+                android:backgroundTint="#ff0066"
+                android:hint="@string/search_subreddits"
+                android:importantForAutofill="no"
+                android:inputType="text"
                 android:singleLine="true"
                 android:textColor="#ffffff"
                 android:textColorHint="#aaaaaa"
-                android:backgroundTint="#ff0066"
-                android:hint="Search subreddits"
-                android:textCursorDrawable="@null">
-            </EditText>
+                android:textCursorDrawable="@null"></EditText>
 
             <ImageButton
                 android:id="@+id/info"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
                 android:layout_gravity="right|center_vertical"
                 android:layout_weight="0.02"
                 android:background="@android:color/transparent"
                 android:clickable="true"
                 android:maxWidth="5dp"
                 android:maxHeight="5dp"
-                app:srcCompat="@drawable/baseline_help_outline_white_36" />
+                app:srcCompat="@drawable/baseline_help_outline_white_36"
+                android:focusable="true" />
 
             <ImageButton
                 android:id="@+id/addCustomSub"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
                 android:layout_gravity="right|center_vertical"
                 android:layout_weight="0.02"
                 android:background="@android:color/transparent"
                 android:clickable="true"
                 android:maxWidth="5dp"
                 android:maxHeight="5dp"
-                app:srcCompat="@drawable/baseline_add_white_36" />
+                app:srcCompat="@drawable/baseline_add_white_36"
+                android:focusable="true" />
 
         </LinearLayout>
     </androidx.appcompat.widget.Toolbar>
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent">
+
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/all_tab" />
+
+        <com.google.android.material.tabs.TabItem
+            android:text="@string/selected_tab"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </com.google.android.material.tabs.TabLayout>
 
     <ListView android:id="@+id/listView" android:layout_width="fill_parent"
         android:layout_height="fill_parent" />
 
     <Button
-        android:descendantFocusability="blocksDescendants"
         android:id="@+id/updateSelection"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Update Selection" />
+        android:descendantFocusability="blocksDescendants" />
 
 </LinearLayout>
