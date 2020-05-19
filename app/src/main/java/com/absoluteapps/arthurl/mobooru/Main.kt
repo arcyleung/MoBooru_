@@ -527,6 +527,7 @@ class Main : AppCompatActivity() {
                 or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 or View.SYSTEM_UI_FLAG_FULLSCREEN
                 or View.SYSTEM_UI_FLAG_IMMERSIVE)
+        window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
     }
 
     private fun setOnClickListener() {
@@ -545,9 +546,11 @@ class Main : AppCompatActivity() {
                     try {
                         val tmp = DownloadImage(zoomImageView).execute(selected.imgUrl).get()
                         if (tmp == null) {
-                            Toast.makeText(applicationContext,
-                                    "Error rendering image: file corrupted or too large",
-                                    Toast.LENGTH_LONG).show()
+                            this@Main.runOnUiThread {
+                                Toast.makeText(applicationContext,
+                                        "Error loading image: file corrupted or too large",
+                                        Toast.LENGTH_LONG).show()
+                            }
                         } else {
                             img = tmp
                             bitmapWidth = img.width

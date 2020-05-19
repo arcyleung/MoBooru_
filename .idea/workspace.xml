@@ -92,7 +92,7 @@
     <property name="DEBUGGABLE_PROCESS" value="com.absoluteapps.arthurl.mobooru" />
     <property name="DEBUGGER_ID" value="Auto" />
     <property name="DeviceAndSnapshotComboBoxAction.selectedDevice" value="S3PRO201903001552" />
-    <property name="DeviceAndSnapshotComboBoxAction.selectionTime" value="2020-05-12T11:21:09.078Z" />
+    <property name="DeviceAndSnapshotComboBoxAction.selectionTime" value="2020-05-17T07:26:47.467Z" />
     <property name="ExportApk.ApkPath" value="C:\Users\pspka\Dropbox\AndroidStudioProjects\mobooru\app" />
     <property name="ExportApk.BuildType" value="release" />
     <property name="ExportApk.Flavors" value="" />

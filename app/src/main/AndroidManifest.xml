@@ -25,7 +25,6 @@
             android:name=".Main"
             android:label="@string/app_name"
             android:launchMode="singleTop"
-            android:screenOrientation="portrait"
             android:theme="@style/AppTheme" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -35,6 +34,8 @@
         <activity
             android:name=".SubSelector"
             android:label="@string/title_activity_settings_subs"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|keyboardHidden"
             android:theme="@style/AppTheme" />
     </application>
 
