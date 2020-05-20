@@ -89,7 +89,7 @@ class SubSelector : AppCompatActivity() {
                     .setNegativeButton("Back") { _, _ ->
                         // do nothing
                     }
-                    .setIcon(R.drawable.baseline_help_outline_black_36)
+                    .setIcon(R.drawable.baseline_help_outline_white_36)
                     .setMessage("Check the subreddits you'd like to see pictures from; press and hold each subreddit to see its description!")
                     .create()
             d1.show()

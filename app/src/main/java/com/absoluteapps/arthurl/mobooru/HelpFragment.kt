@@ -29,15 +29,15 @@ class HelpFragment : Fragment() {
         when (mPage) {
             0 -> {
                 layoutResId = R.layout.help_1
-                file = R.drawable.help1
+                file = R.drawable.help_1
             }
             1 -> {
                 layoutResId = R.layout.help_2
-                file = R.drawable.help2
+                file = R.drawable.help_2
             }
             else -> {
                 layoutResId = R.layout.help_3
-                file = R.drawable.help3
+                file = R.drawable.help_3
             }
         }
 
@@ -46,7 +46,7 @@ class HelpFragment : Fragment() {
         val bg = view.findViewById<View>(R.id.intro_background)
         // Set the current page index as the View's tag (useful in the PageTransformer)
         view.tag = mPage
-        bg.setBackgroundColor(Color.parseColor("#5c5c5c"))
+        bg.setBackgroundColor(Color.parseColor("#ffffff"))
 
         val iv: ImageView
         iv = view.findViewById(R.id.imageView)

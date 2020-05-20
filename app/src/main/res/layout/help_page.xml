@@ -13,6 +13,6 @@
         app:tabGravity="center"
         app:tabMaxWidth="30dp"
         app:tabIndicatorHeight="0dp"
-        android:background="#5c5c5c"
-        android:layout_gravity="top|center"/>
+        android:background="#ffffff"
+        android:layout_gravity="bottom|center"/>
 </androidx.viewpager.widget.ViewPager>

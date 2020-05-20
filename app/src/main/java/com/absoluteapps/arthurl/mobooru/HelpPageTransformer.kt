@@ -1,5 +1,6 @@
 package com.absoluteapps.arthurl.mobooru
 
+import android.os.Build
 import android.view.View
 import androidx.viewpager.widget.ViewPager
 
@@ -30,7 +31,11 @@ class HelpPageTransformer : ViewPager.PageTransformer {
             // fade, but the animation should also slowly move
             // down and out of the screen
             val description = page.findViewById<View>(R.id.description)
-            description.translationY = -pageWidthTimesPosition / 2f
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                description.translationZ = pageWidthTimesPosition / 2f
+            } else {
+                description.translationX = pageWidthTimesPosition / 2f
+            }
             description.alpha = 1.0f - absPosition
         }
     }

@@ -20,8 +20,6 @@ import jp.wasabeef.glide.transformations.BlurTransformation
 import jp.wasabeef.glide.transformations.RoundedCornersTransformation
 
 class DataAdapter(internal var activity: Activity, internal var resource: Int, internal var datas: List<Data>, internal var showNsfw: Boolean = false, internal var showTitles: Boolean = true) : ArrayAdapter<Data>(activity, resource, datas) {
-    internal var nsfwLogo = Uri.parse("drawable/nsfwlogo.png")
-
     private val regOpts = RequestOptions()
             .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
             .transform(MultiTransformation(CenterCrop(), RoundedCornersTransformation(20,10)))
