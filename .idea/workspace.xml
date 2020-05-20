@@ -77,6 +77,13 @@
       </state>
     </system>
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="resourceFile" />
+      </list>
+    </option>
+  </component>
   <component name="GenerateSignedApkSettings">
     <option name="KEY_STORE_PATH" value="C:\Users\pspka\Dropbox\AndroidStudioProjects\keystore.jks" />
     <option name="KEY_ALIAS" value="key0" />
@@ -91,8 +98,8 @@
     <property name="DEBUGGABLE_DEVICE" value="emulator-5554" />
     <property name="DEBUGGABLE_PROCESS" value="com.absoluteapps.arthurl.mobooru" />
     <property name="DEBUGGER_ID" value="Auto" />
-    <property name="DeviceAndSnapshotComboBoxAction.selectedDevice" value="S3PRO201903001552" />
-    <property name="DeviceAndSnapshotComboBoxAction.selectionTime" value="2020-05-17T07:26:47.467Z" />
+    <property name="DeviceAndSnapshotComboBoxAction.selectedDevice" value="Pixel_3_XL_API_R" />
+    <property name="DeviceAndSnapshotComboBoxAction.selectionTime" value="2020-05-20T12:47:54.226Z" />
     <property name="ExportApk.ApkPath" value="C:\Users\pspka\Dropbox\AndroidStudioProjects\mobooru\app" />
     <property name="ExportApk.BuildType" value="release" />
     <property name="ExportApk.Flavors" value="" />
@@ -105,12 +112,14 @@
     <property name="android.project.structure.proportion" value="0.15" />
     <property name="android.sdk.path" value="$USER_HOME$/AppData/Local/Android/Sdk" />
     <property name="device.picker.selection" value="192.168.1.69:5555" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../keystore.jks" />
+    <property name="last_directory_selection" value="$PROJECT_DIR$/app/src/main/res/drawable" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/app/src/main/res/drawable" />
     <property name="not.eligible.for.single.variant.sync" value="true" />
     <property name="settings.editor.selected.configurable" value="vcs.Git" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\pspka\Projects\mobooru\app\src\main\res\drawable" />
       <recent name="C:\Users\mrgoose\Dropbox\AndroidStudioProjects\MoBooru\app\src\main\res\mipmap-xhdpi" />
     </key>
   </component>
@@ -265,5 +274,16 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="kotlin-line">
+          <url>file://$PROJECT_DIR$/app/src/main/java/com/absoluteapps/arthurl/mobooru/Main.kt</url>
+          <line>795</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

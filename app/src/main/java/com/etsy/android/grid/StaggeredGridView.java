@@ -46,8 +46,8 @@ public class StaggeredGridView extends ExtendableListView {
     private static final String TAG = "StaggeredGridView";
     private static final boolean DBG = false;
 
-    private static final int DEFAULT_COLUMNS_PORTRAIT = 2;
-    private static final int DEFAULT_COLUMNS_LANDSCAPE = 3;
+    private static final int DEFAULT_COLUMNS_PORTRAIT = 3;
+    private static final int DEFAULT_COLUMNS_LANDSCAPE = 5;
 
     private int mColumnCount;
     private int mItemMargin;
@@ -170,8 +170,8 @@ public class StaggeredGridView extends ExtendableListView {
                 mColumnCountPortrait = mColumnCount;
                 mColumnCountLandscape = mColumnCount;
             } else {
-                mColumnCountPortrait = prefs.getInt("COLUMNS_PORTRAIT", 2);
-                mColumnCountLandscape = prefs.getInt("COLUMNS_LANDSCAPE", 3);
+                mColumnCountPortrait = prefs.getInt("COLUMNS_PORTRAIT", DEFAULT_COLUMNS_PORTRAIT);
+                mColumnCountLandscape = prefs.getInt("COLUMNS_LANDSCAPE", DEFAULT_COLUMNS_LANDSCAPE);
             }
 
             mItemMargin = typedArray.getDimensionPixelSize(

@@ -7,12 +7,24 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.TextView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.MultiTransformation
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.bumptech.glide.request.RequestOptions
+import com.bumptech.glide.request.RequestOptions.bitmapTransform
 
 import com.etsy.android.grid.util.DynamicHeightImageView
-import com.squareup.picasso.Picasso
+import jp.wasabeef.glide.transformations.BlurTransformation
+import jp.wasabeef.glide.transformations.RoundedCornersTransformation
 
 class DataAdapter(internal var activity: Activity, internal var resource: Int, internal var datas: List<Data>, internal var showNsfw: Boolean = false, internal var showTitles: Boolean = true) : ArrayAdapter<Data>(activity, resource, datas) {
     internal var nsfwLogo = Uri.parse("drawable/nsfwlogo.png")
+
+    private val regOpts = RequestOptions()
+            .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+            .transform(MultiTransformation(CenterCrop(), RoundedCornersTransformation(20,10)))
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         var row = convertView
@@ -44,22 +56,23 @@ class DataAdapter(internal var activity: Activity, internal var resource: Int, i
         holder.description!!.text = if (data.series.length > 30) data.series.substring(0, 25) + "..." else data.series
 
         if (data.thumbImgUrl !== "") {
-            if (data.nsfw && !showNsfw) {
-                holder.image!!.heightRatio = 1.0
-                Picasso.get()
-                        .load(R.drawable.nsfwlogo)
-                        .resize(500, 580)
-                        .into(holder.image)
-            } else {
-                val r = if (data.rat < 1) 1 / data.rat else data.rat
-                holder.image!!.heightRatio = r
-                Picasso.get()
-                        .load(data.thumbImgUrl)
-                        .resize(540, Math.floor(540 * r).toInt())   // set height programmatically
-                        .centerCrop()
-                        .transform(RoundedTransformation(20, 10))
-                        .into(holder.image)
+            val r = if (data.rat < 1) 1 / data.rat else data.rat
 
+            if (data.nsfw && !showNsfw) {
+                holder.image!!.heightRatio = r
+                Glide.with(activity)
+                        .load(data.thumbImgUrl)
+                        .override(540, Math.floor(540 * r).toInt())   // set height programmatically
+                        .apply(RequestOptions().transform(MultiTransformation(BlurTransformation(25, 3), CenterCrop(), RoundedCornersTransformation(20,10))))
+                        .transition(DrawableTransitionOptions.withCrossFade())
+                        .into(holder.image!!)
+            } else {
+                holder.image!!.heightRatio = r
+                Glide.with(activity)
+                        .load(data.thumbImgUrl)
+                        .override(540, Math.floor(540 * r).toInt())   // set height programmatically
+                        .apply(regOpts)
+                        .into(holder.image!!)
             }
         }
         return row

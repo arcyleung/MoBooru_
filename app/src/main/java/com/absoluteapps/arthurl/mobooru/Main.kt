@@ -351,7 +351,7 @@ class Main : AppCompatActivity() {
                                 // do nothing
                             }
                             .setIcon(R.drawable.ic_launcher)
-                            .setMessage(Html.fromHtml(appName + " v" + verString + "<br>Author: arcyleung<br/><a href=\"http://arcyleung.com\">http://arcyleung.com</a><br/><br/>Follow me on <a href=\"https://twitter.com/arcyleung\">Twitter</a> or <a href=\"https://www.linkedin.com/in/arcyleung/\">LinkedIn</a>! <br/> <br/> Please direct any questions about development to <a href=\"mailto:arcyleung@gmail.com?Subject=MoBooru Inquiry\" target=\"_top\">arcyleung@gmail.com</a>\n" +
+                            .setMessage(Html.fromHtml(appName + " v" + verString + "<br>Developer: Arthur Leung<br/><a href=\"http://arcyleung.com\">http://arcyleung.com</a><br/><br/>Follow me on <a href=\"https://twitter.com/arcyleung\">Twitter</a> or <a href=\"https://www.linkedin.com/in/arcyleung/\">LinkedIn</a>! <br/> <br/> Please direct any questions and suggestions to <a href=\"mailto:arcyleung@gmail.com?Subject=MoBooru Inquiry\" target=\"_top\">arcyleung@gmail.com</a>\n" +
                                     "</p> or if you want to help support development!"))
                             .setOnDismissListener {
                                 if (prefs.getBoolean("FULLSCREEN", false)) {
@@ -601,11 +601,11 @@ class Main : AppCompatActivity() {
                                 unfavoriteFAB.show()
                                 if (display.rotation == Surface.ROTATION_0) {
                                     // Vertical
-                                    val portTranslate = displayMetrics.heightPixels * 0.09f
+                                    val portTranslate = displayMetrics.widthPixels * 0.18f
                                     unfavoriteFAB.animate().translationX(-portTranslate)
                                 } else {
                                     // Horizontal
-                                    val landTranslate = displayMetrics.heightPixels * 0.15f
+                                    val landTranslate = displayMetrics.heightPixels * 0.17f
                                     unfavoriteFAB.animate().translationX(-landTranslate)
                                 }
                             } else {
@@ -613,11 +613,11 @@ class Main : AppCompatActivity() {
                                 unfavoriteFAB.hide()
                                 if (display.rotation == Surface.ROTATION_0) {
                                     // Vertical
-                                    val portTranslate = displayMetrics.heightPixels * 0.09f
+                                    val portTranslate = displayMetrics.widthPixels * 0.18f
                                     favoriteFAB.animate().translationX(-portTranslate)
                                 } else {
                                     // Horizontal
-                                    val landTranslate = displayMetrics.heightPixels * 0.15f
+                                    val landTranslate = displayMetrics.heightPixels * 0.17f
                                     favoriteFAB.animate().translationX(-landTranslate)
                                 }
                             }
@@ -793,14 +793,14 @@ class Main : AppCompatActivity() {
 
         if (display.rotation == Surface.ROTATION_0) {
             // Vertical
-            val portTranslate = displayMetrics.heightPixels * 0.09f
+            val portTranslate = displayMetrics.widthPixels * 0.18f
             wallpaperFAB.animate().translationY(-portTranslate)
             shareFAB.animate().translationY(2 * -portTranslate)
             saveFAB.animate().translationY(3 * -portTranslate)
             sourceFAB.animate().translationY(4 * -portTranslate)
         } else {
             // Horizontal
-            val landTranslate = displayMetrics.heightPixels * 0.15f
+            val landTranslate = displayMetrics.heightPixels * 0.17f
             wallpaperFAB.animate().translationY(-landTranslate)
             shareFAB.animate().translationY(2 * -landTranslate)
             saveFAB.animate().translationY(3 * -landTranslate)
@@ -864,14 +864,14 @@ class Main : AppCompatActivity() {
         navigationView.menu.findItem(R.id.nav_favorites).isVisible = !viewingFavorites
         navigationView.menu.findItem(R.id.nav_back).isVisible = viewingFavorites
 
-        val nsfwToggle = (navigationView.findViewById<View>(R.id.nsfw_toggle) as RelativeLayout).getChildAt(0) as SwitchCompat
-        val fullScreenToggle = (navigationView.findViewById<View>(R.id.fullscreen_toggle) as RelativeLayout).getChildAt(0) as SwitchCompat
-        val titlesToggle = (navigationView.findViewById<View>(R.id.title_toggle) as RelativeLayout).getChildAt(0) as SwitchCompat
-        nsfwToggle.isChecked = prefs.getBoolean("SHOW_NSFW", false)
-        fullScreenToggle.isChecked = prefs.getBoolean("FULLSCREEN", false)
-        titlesToggle.isChecked = prefs.getBoolean("SHOW_TITLES", true)
+        val nsfwToggle = (navigationView.findViewById<View>(R.id.nsfw_toggle) as? RelativeLayout)?.getChildAt(0) as? SwitchCompat
+        val fullScreenToggle = (navigationView.findViewById<View>(R.id.fullscreen_toggle) as? RelativeLayout)?.getChildAt(0) as? SwitchCompat
+        val titlesToggle = (navigationView.findViewById<View>(R.id.title_toggle) as? RelativeLayout)?.getChildAt(0) as? SwitchCompat
+        nsfwToggle?.isChecked = prefs.getBoolean("SHOW_NSFW", false)
+        fullScreenToggle?.isChecked = prefs.getBoolean("FULLSCREEN", false)
+        titlesToggle?.isChecked = prefs.getBoolean("SHOW_TITLES", true)
 
-        nsfwToggle.setOnClickListener {
+        nsfwToggle?.setOnClickListener {
             prefsEditor.putBoolean("SHOW_NSFW", !prefs.getBoolean("SHOW_NSFW", false))
             prefsEditor.apply()
             val intent = intent
@@ -880,7 +880,7 @@ class Main : AppCompatActivity() {
             startActivity(intent)
             overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
         }
-        fullScreenToggle.setOnClickListener {
+        fullScreenToggle?.setOnClickListener {
             prefsEditor.putBoolean("FULLSCREEN", !prefs.getBoolean("FULLSCREEN", false))
             prefsEditor.apply()
             val intent = intent
@@ -889,7 +889,7 @@ class Main : AppCompatActivity() {
             startActivity(intent)
             overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
         }
-        titlesToggle.setOnClickListener {
+        titlesToggle?.setOnClickListener {
             prefsEditor.putBoolean("SHOW_TITLES", !prefs.getBoolean("SHOW_TITLES", true))
             prefsEditor.apply()
             val intent = intent
@@ -1243,8 +1243,8 @@ class Main : AppCompatActivity() {
             val urldisplay = urls[0]
             var img: Bitmap? = null
             try {
-                val `in` = URL(urldisplay).openStream()
-                img = BitmapFactory.decodeStream(`in`)
+                val input = URL(urldisplay).openStream()
+                img = BitmapFactory.decodeStream(input)
                 val bitmapSize = img!!.byteCount
                 if (bitmapSize > MAX_BITMAP_SIZE) {
                     img = null

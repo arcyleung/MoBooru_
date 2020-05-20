@@ -61,7 +61,9 @@
             android:layout_height="match_parent"
             android:layout_gravity="start"
             app:insetForeground="@null"
-            app:menu="@menu/nav_menu">
+            app:menu="@menu/nav_menu"
+            app:headerLayout="@menu/header_layout"
+            android:background="#ffffff">
 
         </com.google.android.material.navigation.NavigationView>
 
