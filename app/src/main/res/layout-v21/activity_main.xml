@@ -32,6 +32,22 @@
 
             </com.google.android.material.appbar.AppBarLayout>
 
+            <LinearLayout
+                android:id="@+id/noData"
+                android:gravity="center"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:visibility="gone">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/noData">
+                </TextView>
+
+            </LinearLayout>
+
             <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
                 android:id="@+id/swipe_container"
                 android:layout_width="match_parent"

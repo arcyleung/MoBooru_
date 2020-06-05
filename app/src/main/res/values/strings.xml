@@ -14,8 +14,10 @@
     <string name="help_2">Select content from subreddits you wish to view</string>
     <string name="help_3">Have fun!</string>
     <string name="search_subreddits">Search subreddits</string>
-    <string name="subreddit_hint">Enter subreddit e.g. r/animenocontext</string>
+    <string name="add_sub_desc">\nAdd subreddits here!\nYou can add multiple at once separated with new lines</string>
+    <string name="add_sub_hint">Enter subreddit e.g. r/animenocontext</string>
     <string name="all_tab">All</string>
     <string name="selected_tab">Selected</string>
+    <string name="noData">Ain\'t nobody here but us chickens!\n Please select another subreddit</string>
 
 </resources>

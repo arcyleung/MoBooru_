@@ -24,20 +24,29 @@ import com.google.gson.reflect.TypeToken
 import org.json.JSONObject
 import java.net.URL
 import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashSet
 
 class SubSelector : AppCompatActivity() {
 
     internal var origList: ArrayList<Sub> = ArrayList<Sub>()
     internal lateinit var subsList: ArrayList<Sub>
+    internal var allShownSubsCount: Int = 0
+    internal var selectedShownSubsCount: Int = 0
     private lateinit var subsMap: HashMap<Int, Sub>
     internal lateinit var customSubsMap: HashMap<Int, Sub>
     internal lateinit var selectedSubs: HashSet<Int>
     internal lateinit var selectedCustomSubs: HashSet<Int>
+    internal var showNsfw: Boolean = false
     internal var adp: CustomAdapter? = null
     internal var gson = Gson()
     private lateinit var mInfo: ImageButton
     private lateinit var mAddCustomSub: ImageButton
     private lateinit var mEditText: EditText
+    private lateinit var addSuccess: ArrayList<String>
+    private lateinit var addExisting: ArrayList<String>
+    private lateinit var addFailed: ArrayList<String>
+    private var addCount: Int = 0
     private lateinit var mTabLayout: TabLayout
     internal var hashSetMap = object : TypeToken<HashSet<Int>>() {
 
@@ -86,11 +95,24 @@ class SubSelector : AppCompatActivity() {
         mInfo.setOnClickListener {
             val d1 = AlertDialog.Builder(ContextThemeWrapper(this@SubSelector, R.style.AppTheme))
                     .setTitle("Tips")
+                    .setNeutralButton("Reset") { _, _ ->
+                        // Reset selection to default
+                        selectedSubs = HashSet()
+                        selectedSubs.add(1)
+                        selectedCustomSubs = HashSet()
+                        prefsEditor.putString("SELECTED_SUBS", "[1]")
+                        prefsEditor.putString("SELECTED_CUSTOM_SUBS", "[]")
+                        prefsEditor.apply()
+                        finish()
+                        overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+                        startActivity(Intent(this@SubSelector, Main::class.java))
+                        overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+                    }
                     .setNegativeButton("Back") { _, _ ->
                         // do nothing
                     }
                     .setIcon(R.drawable.baseline_help_outline_white_36)
-                    .setMessage("Check the subreddits you'd like to see pictures from; press and hold each subreddit to see its description!")
+                    .setMessage("Check the subreddits you'd like to see pictures from; press and hold each subreddit to see its description!\n\nNote that NSFW subreddits and content are hidden by default, see settings page to configure.")
                     .create()
             d1.show()
         }
@@ -105,10 +127,22 @@ class SubSelector : AppCompatActivity() {
             val edt = dialogView.findViewById<View>(R.id.subEntry) as EditText
 
             dialogBuilder.setTitle("Add subreddit")
+            dialogBuilder.setMessage(R.string.add_sub_desc)
             dialogBuilder.setPositiveButton("Done") { _, _ ->
                 progressDialog = ProgressDialog.show(this@SubSelector, "Adding sub", "...", true)
-                addCustomSubTask = AddCustomSub(edt.text.toString())
-                addCustomSubTask.execute()
+                val inputs = edt.text.toString().split("\n")
+
+                // Reset counters
+                addSuccess = ArrayList<String>()
+                addExisting = ArrayList<String>()
+                addFailed = ArrayList<String>()
+                addCount = inputs.size
+
+                inputs.forEach {
+                    addCustomSubTask = AddCustomSub(it)
+                    addCustomSubTask.execute()
+                }
+
                 imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0)
             }
             dialogBuilder.setNegativeButton("Cancel") { _, _ -> imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0) }
@@ -122,7 +156,9 @@ class SubSelector : AppCompatActivity() {
         // List of subs
         subsMap = intent.getSerializableExtra("subsMap") as HashMap<Int, Sub>
         customSubsMap = intent.getSerializableExtra("customSubsMap") as HashMap<Int, Sub>
-        origList.addAll(subsMap.values)
+
+        // Delete NSFW default subs
+        origList.addAll(subsMap.values.filter { s -> !s.isNSFW })
         origList.addAll(customSubsMap.values)
         origList.sort()
 
@@ -132,6 +168,7 @@ class SubSelector : AppCompatActivity() {
         try {
             selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[" + R.string.defaultsub + "]"), hashSetMap)
             selectedCustomSubs = gson.fromJson(prefs.getString("SELECTED_CUSTOM_SUBS", "[]"), hashSetMap)
+            showNsfw = prefs.getBoolean("SHOW_NSFW", false)
             for (id in selectedSubs) {
                 subsMap[id]!!.selected = true
             }
@@ -139,6 +176,7 @@ class SubSelector : AppCompatActivity() {
                 customSubsMap[id]!!.selected = true
             }
         } catch (ex: Exception) {
+            println(ex.printStackTrace())
             // Set selectedString sub to awwnime only
             selectedSubs = HashSet()
             selectedSubs.add(1)
@@ -171,6 +209,9 @@ class SubSelector : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
+        prefsEditor.putString("SELECTED_SUBS", gson.toJson(selectedSubs, hashSetMap))
+        prefsEditor.putString("SELECTED_CUSTOM_SUBS", gson.toJson(selectedCustomSubs, hashSetMap))
+        prefsEditor.apply()
         overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
         startActivity(Intent(this, Main::class.java))
         overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
@@ -178,24 +219,28 @@ class SubSelector : AppCompatActivity() {
     }
 
     private fun updateTabs() {
-        mTabLayout.getTabAt(0)!!.text = "ALL (${origList.size})"
-        mTabLayout.getTabAt(1)!!.text = "SELECTED (${selectedCustomSubs.size + selectedSubs.size})"
+        mTabLayout.getTabAt(0)!!.text = "ALL (${allShownSubsCount})"
+        mTabLayout.getTabAt(1)!!.text = "SELECTED (${selectedShownSubsCount})"
     }
 
     private fun displayList() {
         adp = CustomAdapter(this, R.layout.activity_settings_subs_checkboxes, subsList)
         val lv = findViewById<View>(R.id.listView) as ListView
         lv.adapter = adp
+        val editSearch = findViewById<View>(R.id.search) as EditText
+        val text = editSearch.text.toString().toLowerCase(Locale.getDefault())
+        adp!!.filter(text, mTabLayout.selectedTabPosition == 1)
 
         // Locate the EditText in activity_settings_subs.xml
-        val editSearch = findViewById<View>(R.id.search) as EditText
 
         // Locate the TabLayout in activity_settings_subs.xml
 
         mTabLayout.addOnTabSelectedListener(object :
                 TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
-                adp!!.filter("", mTabLayout.selectedTabPosition == 1)
+                val text = editSearch.text.toString().toLowerCase(Locale.getDefault())
+                adp!!.filter(text, mTabLayout.selectedTabPosition == 1)
+                updateTabs()
             }
 
             override fun onTabUnselected(tab: TabLayout.Tab) {
@@ -214,6 +259,7 @@ class SubSelector : AppCompatActivity() {
                 // TODO Auto-generated method stub
                 val text = editSearch.text.toString().toLowerCase(Locale.getDefault())
                 adp!!.filter(text, mTabLayout.selectedTabPosition == 1)
+                updateTabs()
             }
 
             override fun beforeTextChanged(arg0: CharSequence, arg1: Int,
@@ -244,33 +290,35 @@ class SubSelector : AppCompatActivity() {
         }
 
         lv.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, _ ->
-            val sub = parent.getItemAtPosition(position) as Sub
+            val viewSub = parent.getItemAtPosition(position) as Sub
             val cb = view.findViewById<View>(R.id.checkBox) as CheckBox
 
-            val isSelected = selectedSubs.contains(sub.subID) || selectedCustomSubs.contains(sub.subID)
+            val isSelected = selectedSubs.contains(viewSub.subID) || selectedCustomSubs.contains(viewSub.subID)
             if (isSelected) {
-                if (sub.isCustom) {
-                    selectedCustomSubs.remove(sub.subID)
+                selectedShownSubsCount--
+                if (viewSub.isCustom) {
+                    selectedCustomSubs.remove(viewSub.subID)
                 } else {
-                    selectedSubs.remove(sub.subID)
+                    selectedSubs.remove(viewSub.subID)
                 }
 
                 // If we are showing only selected subs, update the ListView adapter data
                 // TODO: refactor with enum
                 if (mTabLayout.selectedTabPosition == 1) {
-                    subsList.remove(sub)
+                    subsList.remove(viewSub)
                     adp!!.notifyDataSetChanged()
                 }
             } else {
-                if (sub.isCustom) {
-                    selectedCustomSubs.add(sub.subID)
+                selectedShownSubsCount++
+                if (viewSub.isCustom) {
+                    selectedCustomSubs.add(viewSub.subID)
                 } else {
-                    selectedSubs.add(sub.subID)
+                    selectedSubs.add(viewSub.subID)
                 }
             }
             updateTabs()
             cb.isChecked = !isSelected
-            sub.selected = !isSelected
+            viewSub.selected = !isSelected
             adp!!.notifyDataSetChanged()
         }
 
@@ -296,8 +344,12 @@ class SubSelector : AppCompatActivity() {
                             subsList.remove(sub)
 
                             adp!!.notifyDataSetChanged()
-                            updateTabs()
-                            Toast.makeText(this@SubSelector, "Removed " + sub.subName, Toast.LENGTH_SHORT).show()
+
+                            runOnUiThread {
+                                displayList()
+                                updateTabs()
+                                Toast.makeText(this@SubSelector, "Removed " + sub.subName, Toast.LENGTH_SHORT).show()
+                            }
                         }
                         .setMessage(if (sub.desc.isNotEmpty()) sub.desc else "No description")
                         .create()
@@ -377,18 +429,30 @@ class SubSelector : AppCompatActivity() {
         fun filter(searchString: String, onlySelected: Boolean) {
             var lower = searchString.toLowerCase(Locale.getDefault())
             var tmp: ArrayList<Sub> = ArrayList<Sub>()
+            var selected: ArrayList<Sub>
             subsList.clear()
             tmp.addAll(origList)
 
-            // Only show selected subs
-            if (onlySelected) {
-                tmp = tmp.filter { s -> s.selected == onlySelected } as ArrayList<Sub>
+            // Hide NSFW subs by default, exclude custom
+            if (!showNsfw) {
+                tmp = tmp.filter { s -> !s.isNSFW || s.isCustom } as ArrayList<Sub>
             }
 
             // Has search term
             if (!lower.isEmpty()) {
                 tmp = tmp.filter { s -> s.subName.contains(lower) } as ArrayList<Sub>
             }
+
+            // Only selected
+            allShownSubsCount = tmp.size
+            selected = tmp.filter { s -> selectedSubs.contains(s.subID) || selectedCustomSubs.contains(s.subID) } as ArrayList<Sub>
+            selectedShownSubsCount = selected.size
+
+            // Only show selected subs
+            if (onlySelected) {
+                tmp = selected
+            }
+
             subsList.addAll(tmp)
             notifyDataSetChanged()
         }
@@ -404,11 +468,14 @@ class SubSelector : AppCompatActivity() {
     inner class AddCustomSub internal constructor(private var customSubName: String) : AsyncTask<Void, Int, Int>() {
 
         override fun doInBackground(vararg params: Void): Int? {
-            // Parse subreddit
-            // if begins with r/, pass directly
-            // else prefix with r/
+            // Parse subreddit names
+
             if (customSubName.isEmpty())
                 return -1
+            // if begins with /r/, remove first slash
+            if (customSubName.startsWith("/r/"))
+                customSubName = customSubName.removePrefix("/")
+            // else prefix with r/
             if (!customSubName.startsWith("r/"))
                 customSubName = "r/$customSubName"
 
@@ -444,22 +511,15 @@ class SubSelector : AppCompatActivity() {
                             customSubName,
                             customSubID,
                             obj.getInt("subscribers"),
-                            true,
+                            false,
                             obj.getBoolean("over18"),
                             true,
                             obj.getString("public_description")
                     )
                     customSubsMap[customSubsMap.size + 10000] = newSub
-                    val serial = gson.toJson(customSubsMap, intSubMap)
-                    prefsEditor.putString("CUSTOM_SUBS", serial)
-
                     selectedCustomSubs.add(customSubID)
-                    prefsEditor.putString("SELECTED_CUSTOM_SUBS", gson.toJson(selectedCustomSubs, hashSetMap))
-
-                    prefsEditor.apply()
                     origList.add(newSub)
                     subsList.add(newSub)
-                    subsList.sort()
 
                     runOnUiThread {
                         displayList()
@@ -475,18 +535,44 @@ class SubSelector : AppCompatActivity() {
         }
 
         override fun onPostExecute(result: Int) {
-            var msg: String? = null
+//            var msg: String? = null
             when (result) {
-                0 -> msg = "Added $customSubName sub..."
-                -1 -> msg = "Subreddit cannot be blank!"
-                -2 -> msg = "Subreddit $customSubName has already been added!"
-                -3 -> msg = "Subreddit $customSubName does not exist or is empty"
-                -4 -> msg = "Error $customSubName sub..."
+                0 -> addSuccess.add(customSubName)
+                -1 -> addFailed.add(customSubName)  // Blank subreddit
+                -2 -> addExisting.add(customSubName)  // Subreddit already been added
+                -3 -> addFailed.add(customSubName)  // Does not exist or is empty
+                -4 -> addFailed.add(customSubName)  // Other error
             }
-            Toast.makeText(applicationContext,
-                    msg,
-                    Toast.LENGTH_LONG).show()
-            progressDialog.dismiss()
+
+            // Last task?
+            if (addSuccess.size + addExisting.size + addFailed.size == addCount) {
+                subsList.sort()
+                prefsEditor.putString("CUSTOM_SUBS", gson.toJson(customSubsMap, intSubMap))
+                prefsEditor.putString("SELECTED_CUSTOM_SUBS", gson.toJson(selectedCustomSubs, hashSetMap))
+
+                prefsEditor.apply()
+                var msg = ""
+                if (addSuccess.size > 0) {
+                    msg += "Successfully added ${addSuccess[0]}${if (addSuccess.size > 1) " and ${addSuccess.size - 1} others" else ""}"
+                }
+
+                if (addExisting.size > 0) {
+                    if (!msg.isEmpty())
+                        msg += "\n"
+                    msg += "${addExisting[0]}${if (addExisting.size > 1) " and ${addExisting.size - 1} others" else ""} already exist!"
+                }
+
+                if (addFailed.size > 0) {
+                    if (!msg.isEmpty())
+                        msg += "\n"
+                    msg += "Failed to add ${addFailed[0]}${if (addFailed.size > 1) " and ${addFailed.size - 1} others" else ""}"
+                }
+
+                Toast.makeText(applicationContext,
+                        msg,
+                        Toast.LENGTH_LONG).show()
+                progressDialog.dismiss()
+            }
         }
 
         override fun onPreExecute() {

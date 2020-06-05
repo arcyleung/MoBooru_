@@ -2,7 +2,6 @@ package com.absoluteapps.arthurl.mobooru
 
 import android.app.Activity
 import android.graphics.Typeface
-import android.net.Uri
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
@@ -13,7 +12,6 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.RequestOptions
-import com.bumptech.glide.request.RequestOptions.bitmapTransform
 
 import com.etsy.android.grid.util.DynamicHeightImageView
 import jp.wasabeef.glide.transformations.BlurTransformation

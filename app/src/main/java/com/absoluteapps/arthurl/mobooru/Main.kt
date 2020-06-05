@@ -104,6 +104,7 @@ class Main : AppCompatActivity() {
     internal var isExpanded: Boolean = false
     private lateinit var navigationView: NavigationView
     private lateinit var staggeredGridView: StaggeredGridView
+    private lateinit var noDataView: LinearLayout
     internal lateinit var drawerLayout: DrawerLayout
     private lateinit var swipeContainer: SwipeRefreshLayout
 
@@ -140,7 +141,6 @@ class Main : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.KITKAT)
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
         setTheme(R.style.AppTheme)
         setContentView(R.layout.activity_main)
@@ -203,6 +203,7 @@ class Main : AppCompatActivity() {
             if (!prefs.contains("FULLSCREEN")) {
                 prefsEditor.putBoolean("FULLSCREEN", false).apply()
             }
+
             if (prefs.getBoolean("FULLSCREEN", false)) {
                 immersiveFullscreen()
             } else {
@@ -222,20 +223,6 @@ class Main : AppCompatActivity() {
             // Time to reindex subs
             if (!prefs.contains("UPDATE_TIME") || System.currentTimeMillis() - prefs.getLong("UPDATE_TIME", 0) > 604800000) {
                 timeToUpdate = true
-            }
-
-            // Show help snackbar on first launch
-            if (prefs.getBoolean("FIRST_LAUNCH", true)) {
-                val snackbar = Snackbar
-                        .make(drawerLayout, "Would you like to view the help guide?", 20000)
-                        .setAction("YES!") {
-                            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-                            startActivity(Intent(applicationContext, Help::class.java))
-                            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-                        }
-
-                snackbar.show()
-                prefsEditor.putBoolean("FIRST_LAUNCH", false).commit()
             }
 
         } catch (ex: Exception) {
@@ -319,7 +306,7 @@ class Main : AppCompatActivity() {
                             initializeAdapter()
                             finish()
                             overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-                            startActivity(Intent(applicationContext, Main::class.java))
+                            restartMain(viewingFavorites)
                             overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
                         }
                     })
@@ -370,7 +357,7 @@ class Main : AppCompatActivity() {
             }
             false
         })
-        //
+
         display = windowManager.defaultDisplay
 
         selectedURL = "https://redditbooru.com/images/?sources=$selectedString"
@@ -397,7 +384,7 @@ class Main : AppCompatActivity() {
                 // Implement refresh adapter code
                 finish()
                 overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-                startActivity(Intent(applicationContext, Main::class.java))
+                restartMain(viewingFavorites)
                 overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
             }
 
@@ -436,6 +423,7 @@ class Main : AppCompatActivity() {
             adapter = DataAdapter(this, R.layout.staggered, datas, showNsfw, showTitles)
             title = Html.fromHtml("<font color='#ffffff'>" + (if (viewingFavorites) "Favorites" else appName) + "</font>")
             staggeredGridView = findViewById<View>(R.id.gridView) as StaggeredGridView
+            noDataView = findViewById(R.id.noData)
             staggeredGridView.adapter = adapter
 
             if (!viewingFavorites) {
@@ -473,6 +461,8 @@ class Main : AppCompatActivity() {
                 }
             }
         } catch (e: Exception) {
+//            noDataView!!.visibility = View.VISIBLE
+//            staggeredGridView!!.visibility = View.GONE
             e.printStackTrace()
         }
 
@@ -546,11 +536,11 @@ class Main : AppCompatActivity() {
                     try {
                         val tmp = DownloadImage(zoomImageView).execute(selected.imgUrl).get()
                         if (tmp == null) {
-                            this@Main.runOnUiThread {
-                                Toast.makeText(applicationContext,
-                                        "Error loading image: file corrupted or too large",
-                                        Toast.LENGTH_LONG).show()
-                            }
+//                            this@Main.runOnUiThread {
+//                                Toast.makeText(applicationContext,
+//                                        "Error loading image: file corrupted or too large",
+//                                        Toast.LENGTH_LONG).show()
+//                            }
                         } else {
                             img = tmp
                             bitmapWidth = img.width
@@ -850,10 +840,9 @@ class Main : AppCompatActivity() {
     }
 
     fun restartMain(viewingFavorites: Boolean) {
-        val intent = intent
         intent.putExtra("viewingFavorites", viewingFavorites)
         finish()
-        startActivity(intent)
+        startActivity(Intent(this, Main::class.java))
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -872,31 +861,58 @@ class Main : AppCompatActivity() {
         titlesToggle?.isChecked = prefs.getBoolean("SHOW_TITLES", true)
 
         nsfwToggle?.setOnClickListener {
-            prefsEditor.putBoolean("SHOW_NSFW", !prefs.getBoolean("SHOW_NSFW", false))
-            prefsEditor.apply()
-            val intent = intent
-            finish()
-            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-            startActivity(intent)
-            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+            val showing = prefs.getBoolean("SHOW_NSFW", false)
+            if (!showing) {
+                // Ask for user confirmation if not previously set
+                val confirm = AlertDialog.Builder(this@Main)
+                        .setTitle("Show NSFW?")
+                        .setPositiveButton("Yes") { _, _ ->
+                            prefsEditor.putBoolean("SHOW_NSFW", true)
+                            prefsEditor.apply()
+
+                            finish()
+                            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+                            restartMain(viewingFavorites)
+                            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+                        }
+                        .setNegativeButton("No") { _, _ ->
+                            nsfwToggle.isChecked = false
+                        }
+                        .setIcon(R.drawable.ic_launcher)
+                        .setMessage("This will also show content marked as NSFW from Reddit posts, are you sure?")
+                        .setOnDismissListener {
+                            nsfwToggle.isChecked = prefs.getBoolean("SHOW_NSFW", false)
+                        }
+                        .create()
+                confirm.show()
+            } else {
+                prefsEditor.putBoolean("SHOW_NSFW", false)
+                prefsEditor.apply()
+
+                finish()
+                overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+                restartMain(viewingFavorites)
+                overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+            }
         }
+
         fullScreenToggle?.setOnClickListener {
             prefsEditor.putBoolean("FULLSCREEN", !prefs.getBoolean("FULLSCREEN", false))
             prefsEditor.apply()
-            val intent = intent
-            finish()
-            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-            startActivity(intent)
-            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-        }
-        titlesToggle?.setOnClickListener {
-            prefsEditor.putBoolean("SHOW_TITLES", !prefs.getBoolean("SHOW_TITLES", true))
-            prefsEditor.apply()
-            val intent = intent
 
             finish()
             overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-            startActivity(intent)
+            restartMain(viewingFavorites)
+            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+        }
+
+        titlesToggle?.setOnClickListener {
+            prefsEditor.putBoolean("SHOW_TITLES", !prefs.getBoolean("SHOW_TITLES", true))
+            prefsEditor.apply()
+
+            finish()
+            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+            restartMain(viewingFavorites)
             overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
         }
         return true
@@ -915,6 +931,15 @@ class Main : AppCompatActivity() {
                 for (i in 0 until pageSize) {
                     val data = Data()
                     try {
+                        // Metadata
+                        data.nsfw = ja.getJSONObject(i).getBoolean("nsfw")
+                        if (!showNsfw && data.nsfw)
+                            continue
+                        data.score = Formatter.shortHandFormatter(Integer.parseInt(ja.getJSONObject(i).getString("score")))
+                        data.redditSrc = "https://redd.it/" + ja.getJSONObject(i).getString("externalId")
+                        data.title = ja.getJSONObject(i).getString("title").replace("\\s*\\[.+?]\\s*".toRegex(), "").replace("&amp;", "&") //+"\n("+data.score+"\uD83D\uDD3A)";
+                        data.series = ja.getJSONObject(i).getString("title").replace("^[^\\[]*".toRegex(), "").replace("&amp;", "&")
+
                         // Image data
                         data.imgUrl = ja.getJSONObject(i).getString("cdnUrl")
                         data.width = ja.getJSONObject(i).getInt("width")
@@ -922,12 +947,6 @@ class Main : AppCompatActivity() {
                         data.rat = 1.0 * data.height / data.width
                         data.thumbImgUrl = ja.getJSONObject(i).getString("thumb") + "_" + thumbnailSize + "_" + thumbnailSize + ".jpg"
 
-                        // Metadata
-                        data.score = Formatter.shortHandFormatter(Integer.parseInt(ja.getJSONObject(i).getString("score")))
-                        data.nsfw = ja.getJSONObject(i).getBoolean("nsfw")
-                        data.redditSrc = "https://redd.it/" + ja.getJSONObject(i).getString("externalId")
-                        data.title = ja.getJSONObject(i).getString("title").replace("\\s*\\[.+?]\\s*".toRegex(), "").replace("&amp;", "&") //+"\n("+data.score+"\uD83D\uDD3A)";
-                        data.series = ja.getJSONObject(i).getString("title").replace("^[^\\[]*".toRegex(), "").replace("&amp;", "&")
 
                         if (i == pageSize - 1) {
                             lastIndexTime = java.lang.Long.parseLong(ja.getJSONObject(i).getString("dateCreated"))
@@ -965,6 +984,19 @@ class Main : AppCompatActivity() {
                             val url = post.getString("url")
                             if (url.contains(".png") || url.contains(".jpg")) {
                                 val data = Data()
+
+                                // Metadata
+
+                                data.nsfw = post.getBoolean("over_18")
+                                if (!showNsfw && data.nsfw)
+                                    continue
+                                data.score = Formatter.shortHandFormatter(Integer.parseInt(post.getString("score")))
+                                data.redditSrc = "https://reddit.com" + post.getString("permalink")
+                                //                                data.title = post.getString("title").replaceAll("\\s*\\[.+?\\]\\s*", "").replace("&amp;", "&"); //+"\n("+data.score+"\uD83D\uDD3A)";
+                                data.series = post.getString("subreddit_name_prefixed")
+                                data.title = post.getString("title").replace("&amp;", "&")
+
+                                // Image data
                                 data.imgUrl = url
                                 val previews = (post.getJSONObject("preview").getJSONArray("images") as JSONArray).get(0) as JSONObject
                                 val resolutions = previews.getJSONArray("resolutions")
@@ -974,12 +1006,6 @@ class Main : AppCompatActivity() {
                                 data.rat = 1.0 * data.height / data.width
                                 data.thumbImgUrl = preview.getString("url").replace("&amp;", "&")
 
-                                data.score = Formatter.shortHandFormatter(Integer.parseInt(post.getString("score")))
-                                data.nsfw = post.getBoolean("over_18")
-                                data.redditSrc = "https://reddit.com" + post.getString("permalink")
-                                //                                data.title = post.getString("title").replaceAll("\\s*\\[.+?\\]\\s*", "").replace("&amp;", "&"); //+"\n("+data.score+"\uD83D\uDD3A)";
-                                data.series = post.getString("subreddit_name_prefixed")
-                                data.title = post.getString("title").replace("&amp;", "&")
 
                                 datas.add(data)
                             }
@@ -1128,7 +1154,6 @@ class Main : AppCompatActivity() {
     /*
         Asynchronous tasks that leverage parallelism
      */
-
     private inner class FetchSubs : AsyncTask<Void, Void, Void>() {
         override fun doInBackground(vararg params: Void): Void? {
             try {
@@ -1151,11 +1176,29 @@ class Main : AppCompatActivity() {
                 subsJSON = subsJSON.substring(0, subsJSON.indexOf("]") + 1)
                 arr = JSONArray(subsJSON)
 
-                if (timeToUpdate || arr.length() > subsMap.size) {
+//                if (timeToUpdate || arr.length() > subsMap.size) {
+                if (timeToUpdate) {
                     for (j in 0 until arr.length()) {
                         subsMap[arr.getJSONObject(j).getInt("value")] = Sub(arr.getJSONObject(j).getString("name"), arr.getJSONObject(j).getInt("value"))
                     }
                     executeAsyncTask(UpdateIndex())
+
+                    // If first time launching app, show help snackbar
+                    if (prefs.getBoolean("FIRST_LAUNCH", true)) {
+                        val snackbar = Snackbar
+                                .make(drawerLayout, "Would you like to view the help guide?", 20000)
+                                .setAction("YES!") {
+                                    overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+                                    startActivity(Intent(applicationContext, Help::class.java))
+                                    overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+                                }
+
+                        snackbar.show()
+                        prefsEditor.putBoolean("FIRST_LAUNCH", false).commit()
+
+                        // Also set default sub to be selected
+                        subsMap[1]?.selected = true
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -1235,7 +1278,7 @@ class Main : AppCompatActivity() {
         }
     }
 
-    private inner class DownloadImage internal constructor(internal var bmImage: InteractiveImageView) : AsyncTask<String, Void, Bitmap>() {
+    private inner class DownloadImage internal constructor(internal var bmImage: InteractiveImageView) : AsyncTask<String, Void, Bitmap?>() {
 
         override fun onPreExecute() {}
 
@@ -1245,13 +1288,22 @@ class Main : AppCompatActivity() {
             try {
                 val input = URL(urldisplay).openStream()
                 img = BitmapFactory.decodeStream(input)
+                if (img == null) {
+                    this@Main.runOnUiThread {
+                        Toast.makeText(applicationContext,
+                                "Error loading image",
+                                Toast.LENGTH_LONG).show()
+                    }
+                    return null
+                }
                 val bitmapSize = img!!.byteCount
                 if (bitmapSize > MAX_BITMAP_SIZE) {
-                    img = null
-                    throw RuntimeException(
-                            "Canvas: trying to draw too large(" + bitmapSize + "bytes) bitmap.")
+                    this@Main.runOnUiThread {
+                        Toast.makeText(applicationContext,
+                                "Error loading image: image too large",
+                                Toast.LENGTH_LONG).show()
+                    }
                 }
-
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -1259,7 +1311,7 @@ class Main : AppCompatActivity() {
             return img
         }
 
-        override fun onPostExecute(result: Bitmap) {
+        override fun onPostExecute(result: Bitmap?) {
             bmImage.setImageDrawable(BitmapDrawable(resources, result))
         }
     }
@@ -1275,8 +1327,17 @@ class Main : AppCompatActivity() {
             // Increment current page
             currentPage += 1
 
+            if (selectedSubs.size == 0 && selectedCustomSubs.size == 0) {
+                noDataView!!.visibility = View.VISIBLE
+                staggeredGridView!!.visibility = View.GONE
+
+                tmp = JSONArray()
+                loadingMore = false
+                return null
+            }
+
             // Normal subs: via Redditbooru
-            if (selectedSubs.size == 0 && selectedCustomSubs.size == 0 || selectedSubs.size != 0) {
+            if (selectedSubs.size != 0) {
                 try {
                     // refactor into string scanner
                     selectedURL = "https://redditbooru.com/images/?sources=$selectedString&afterDate="
