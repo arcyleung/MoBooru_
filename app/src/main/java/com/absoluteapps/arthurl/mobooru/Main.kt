@@ -186,7 +186,7 @@ class Main : AppCompatActivity() {
             prefs = PreferenceManager.getDefaultSharedPreferences(baseContext)
             prefsEditor = prefs.edit()
             // Get saved subs
-            subsMap = gson.fromJson(prefs.getString("SUBS", "{1: {customSubName: 'Awwnime', subID: 1, subscriberCount: 0, selected: true, isNSFW: false, desc: ''}}"), intSubMap)
+            subsMap = gson.fromJson(prefs.getString("SUBS", "{1: {subName: 'Awwnime', subID: 1, subscriberCount: 0, selected: false, isNSFW: false, desc: '', isCustom: false}}"), intSubMap)
             customSubsMap = gson.fromJson(prefs.getString("CUSTOM_SUBS", "{}"), intSubMap)
             selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[1]"), intSet)
             selectedCustomSubs = gson.fromJson(prefs.getString("SELECTED_CUSTOM_SUBS", "[]"), intSet)
@@ -840,9 +840,10 @@ class Main : AppCompatActivity() {
     }
 
     fun restartMain(viewingFavorites: Boolean) {
+        val intent = intent
         intent.putExtra("viewingFavorites", viewingFavorites)
         finish()
-        startActivity(Intent(this, Main::class.java))
+        startActivity(intent)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -1195,9 +1196,6 @@ class Main : AppCompatActivity() {
 
                         snackbar.show()
                         prefsEditor.putBoolean("FIRST_LAUNCH", false).commit()
-
-                        // Also set default sub to be selected
-                        subsMap[1]?.selected = true
                     }
                 }
             } catch (e: Exception) {

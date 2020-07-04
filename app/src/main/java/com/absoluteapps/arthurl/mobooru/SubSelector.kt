@@ -166,23 +166,32 @@ class SubSelector : AppCompatActivity() {
         prefs = PreferenceManager.getDefaultSharedPreferences(baseContext)
         prefsEditor = prefs.edit()
         try {
-            selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[" + R.string.defaultsub + "]"), hashSetMap)
+            selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[1]"), hashSetMap)
             selectedCustomSubs = gson.fromJson(prefs.getString("SELECTED_CUSTOM_SUBS", "[]"), hashSetMap)
             showNsfw = prefs.getBoolean("SHOW_NSFW", false)
             for (id in selectedSubs) {
-                subsMap[id]!!.selected = true
+                if (subsMap.keys.contains(id)) {
+                    subsMap[id]?.selected = true
+                } else {
+                    selectedSubs.remove(id)
+                }
             }
             for (id in selectedCustomSubs) {
-                customSubsMap[id]!!.selected = true
+                if (customSubsMap.keys.contains(id)) {
+                    customSubsMap[id]?.selected = true
+                } else {
+                    selectedCustomSubs.remove(id)
+                }
             }
         } catch (ex: Exception) {
             println(ex.printStackTrace())
             // Set selectedString sub to awwnime only
             selectedSubs = HashSet()
+            selectedCustomSubs = HashSet()
             selectedSubs.add(1)
         }
 
-        subsList = ArrayList(subsMap.values)
+        subsList = ArrayList(subsMap.values.filter{ s -> !s.isNSFW})
         subsList.addAll(customSubsMap.values)
         subsList.sort()
         displayList()

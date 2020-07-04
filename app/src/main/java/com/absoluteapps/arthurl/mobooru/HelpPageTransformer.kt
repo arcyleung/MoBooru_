@@ -32,7 +32,7 @@ class HelpPageTransformer : ViewPager.PageTransformer {
             // down and out of the screen
             val description = page.findViewById<View>(R.id.description)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                description.translationZ = pageWidthTimesPosition / 2f
+                description.translationZ = pageWidthTimesPosition / 2f + 1f
             } else {
                 description.translationX = pageWidthTimesPosition / 2f
             }

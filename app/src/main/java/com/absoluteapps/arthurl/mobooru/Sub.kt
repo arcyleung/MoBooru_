@@ -14,13 +14,13 @@ open class Sub : Serializable, Comparable<Sub> {
         }
     }
 
-    lateinit var subName: String
+    var subName = ""
     var subID = 0
     var subscriberCount = 0
     var selected = false
     var isNSFW = false
     var isCustom = false
-    lateinit var desc: String
+    var desc = ""
 
     constructor(subName: String, subID: Int, subscriberCount: Int, selected: Boolean, isNSFW: Boolean, isCustom: Boolean, desc: String) {
         this.subName = subName
