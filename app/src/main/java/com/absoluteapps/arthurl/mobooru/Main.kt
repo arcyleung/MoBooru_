@@ -40,7 +40,9 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
+import com.google.gson.JsonArray
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.*
 import org.json.JSONArray
 import org.json.JSONObject
 import org.jsoup.Jsoup
@@ -51,6 +53,8 @@ import java.io.FileOutputStream
 import java.io.OutputStream
 import java.net.URL
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.coroutines.coroutineContext
 import kotlin.math.ceil
 import kotlin.system.exitProcess
 
@@ -969,57 +973,73 @@ class Main : AppCompatActivity() {
         return
     }
 
+    // Use coroutines for requests
+//    fun addToArryDirect(jas: Array<JSONArray?>) {
+//        if (loadingMore) {
+//
+//            // IMPLEMENT STOP LOADING ONCE ARRAYSIZE < PAGESIZE
+//            if (jas.isEmpty()) {
+//                loadingMore = false
+//            } else {
+//                for (i in jas.indices) {
+//                    if (jas[i] == null)
+//                        continue
+//                    for (j in 0 until jas[i]!!.length()) {
+//                        try {
+//                            val post = (jas[i]!!.get(j) as JSONObject).get("data") as JSONObject
+//                            val url = post.getString("url")
+//                            if (url.contains(".png") || url.contains(".jpg")) {
+//                                val data = Data()
+//
+//                                // Metadata
+//
+//                                data.nsfw = post.getBoolean("over_18")
+//                                if (!showNsfw && data.nsfw)
+//                                    continue
+//                                data.score = Formatter.shortHandFormatter(Integer.parseInt(post.getString("score")))
+//                                data.redditSrc = "https://reddit.com" + post.getString("permalink")
+//                                //                                data.title = post.getString("title").replaceAll("\\s*\\[.+?\\]\\s*", "").replace("&amp;", "&"); //+"\n("+data.score+"\uD83D\uDD3A)";
+//                                data.series = post.getString("subreddit_name_prefixed")
+//                                data.title = post.getString("title").replace("&amp;", "&")
+//
+//                                // Image data
+//                                data.imgUrl = url
+//                                val previews = (post.getJSONObject("preview").getJSONArray("images") as JSONArray).get(0) as JSONObject
+//                                val resolutions = previews.getJSONArray("resolutions")
+//                                val preview = resolutions.get(resolutions.length() / 2) as JSONObject
+//                                data.width = preview.getInt("width")
+//                                data.height = preview.getInt("height")
+//                                data.rat = 1.0 * data.height / data.width
+//                                data.thumbImgUrl = preview.getString("url").replace("&amp;", "&")
+//
+//
+//                                datas.add(data)
+//                            }
+//                        } catch (ex: Exception) {
+//                            ex.printStackTrace()
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        return
+//    }
+
+    // Single subreddit
     fun addToArryDirect(jas: Array<JSONArray?>) {
         if (loadingMore) {
 
-            //IMPLEMENT STOP LOADING ONCE ARRAYSIZE < PAGESIZE
+            // IMPLEMENT STOP LOADING ONCE ARRAYSIZE < PAGESIZE
             if (jas.isEmpty()) {
                 loadingMore = false
             } else {
                 for (i in jas.indices) {
-                    if (jas[i] == null)
-                        continue
-                    for (j in 0 until jas[i]!!.length()) {
-                        try {
-                            val post = (jas[i]!!.get(j) as JSONObject).get("data") as JSONObject
-                            val url = post.getString("url")
-                            if (url.contains(".png") || url.contains(".jpg")) {
-                                val data = Data()
 
-                                // Metadata
-
-                                data.nsfw = post.getBoolean("over_18")
-                                if (!showNsfw && data.nsfw)
-                                    continue
-                                data.score = Formatter.shortHandFormatter(Integer.parseInt(post.getString("score")))
-                                data.redditSrc = "https://reddit.com" + post.getString("permalink")
-                                //                                data.title = post.getString("title").replaceAll("\\s*\\[.+?\\]\\s*", "").replace("&amp;", "&"); //+"\n("+data.score+"\uD83D\uDD3A)";
-                                data.series = post.getString("subreddit_name_prefixed")
-                                data.title = post.getString("title").replace("&amp;", "&")
-
-                                // Image data
-                                data.imgUrl = url
-                                val previews = (post.getJSONObject("preview").getJSONArray("images") as JSONArray).get(0) as JSONObject
-                                val resolutions = previews.getJSONArray("resolutions")
-                                val preview = resolutions.get(resolutions.length() / 2) as JSONObject
-                                data.width = preview.getInt("width")
-                                data.height = preview.getInt("height")
-                                data.rat = 1.0 * data.height / data.width
-                                data.thumbImgUrl = preview.getString("url").replace("&amp;", "&")
-
-
-                                datas.add(data)
-                            }
-                        } catch (ex: Exception) {
-                            ex.printStackTrace()
-                        }
-                    }
                 }
             }
         }
         return
     }
-
     /*
         Tasks that require permission
      */
@@ -1316,7 +1336,8 @@ class Main : AppCompatActivity() {
 
     inner class LoadMorePhotos : AsyncTask<Void, Void, Void>() {
         private lateinit var tmp: JSONArray
-        private var customTmp = arrayOfNulls<JSONArray>(selectedCustomSubs.size)
+//        private var customTmp = arrayOfNulls<JSONArray>(selectedCustomSubs.size)
+        private var fetchedCustomPages = AtomicInteger(0)
 
         override fun doInBackground(vararg arg0: Void): Void? {
             // set loadingMore flag
@@ -1357,27 +1378,74 @@ class Main : AppCompatActivity() {
             // Custom subs: from Reddit directly
             if (selectedCustomSubs.size != 0) {
                 var ix = 0
-                for (i in selectedCustomSubs) {
-                    try {
-                        var jsonURL = "https://www.reddit.com/" + customSubsMap[i]!!.subName + "/.json"
-                        if (nextPages.containsKey(i)) {
-                            jsonURL += "?after=" + nextPages[i]!!
-                        }
-                        url = URL(jsonURL)
-                        val scan = Scanner(url.openStream())
-                        var posts = ""
-                        while (scan.hasNext())
-                            posts += scan.nextLine()
-                        scan.close()
-                        val obj = JSONObject(posts).getJSONObject("data")
-                        customTmp[ix] = obj.getJSONArray("children")
-                        nextPages[i] = obj.getString("after")
-                        ix++
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
+                    for (i in selectedCustomSubs) {
+                        GlobalScope.launch(Dispatchers.IO) {
+                            var dataJSON = JSONArray()
+                            try {
+                                var jsonURL = "https://www.reddit.com/" + customSubsMap[i]!!.subName + "/.json"
+                                if (nextPages.containsKey(i)) {
+                                    jsonURL += "?after=" + nextPages[i]!!
+                                }
+                                url = URL(jsonURL)
+                                val scan = Scanner(url.openStream())
+                                var posts = ""
+                                while (scan.hasNext())
+                                    posts += scan.nextLine()
+                                scan.close()
+                                val obj = JSONObject(posts).getJSONObject("data")
+                                dataJSON = obj.getJSONArray("children")
+                                nextPages[i] = obj.getString("after")
+                                ix++
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
 
-                }
+                            if (dataJSON != null) {
+                                var posts = ArrayList<Data>()
+                                for (j in 0 until dataJSON!!.length()) {
+                                    try {
+                                        val post = (dataJSON!!.get(j) as JSONObject).get("data") as JSONObject
+                                        val url = post.getString("url")
+                                        val extension = url.split(".")
+                                        // find better way of matching extensions
+                                        if (extension.size > 1 && (extension.last() == "png" || extension.last() == "jpg") && !post.isNull("preview")) {
+                                            val data = Data()
+
+                                            // Metadata
+                                            data.nsfw = post.getBoolean("over_18")
+                                            if (!showNsfw && data.nsfw)
+                                                continue
+                                            data.score = Formatter.shortHandFormatter(Integer.parseInt(post.getString("score")))
+                                            data.redditSrc = "https://reddit.com" + post.getString("permalink")
+                                            data.series = post.getString("subreddit_name_prefixed")
+                                            data.title = post.getString("title").replace("&amp;", "&")
+
+                                            // Image data
+                                            data.imgUrl = url
+                                            val previews = (post.getJSONObject("preview").getJSONArray("images") as JSONArray).get(0) as JSONObject
+                                            val resolutions = previews.getJSONArray("resolutions")
+                                            val preview = resolutions.get(resolutions.length() / 2) as JSONObject
+                                            data.width = preview.getInt("width")
+                                            data.height = preview.getInt("height")
+                                            data.rat = 1.0 * data.height / data.width
+                                            data.thumbImgUrl = preview.getString("url").replace("&amp;", "&")
+
+                                            posts.add(data)
+                                        }
+                                    } catch (ex: Exception) {
+                                        ex.printStackTrace()
+                                    }
+                                }
+
+                                withContext(Dispatchers.Main) {
+                                    datas.addAll(posts)
+                                    adapter!!.datas = datas
+                                    adapter!!.notifyDataSetChanged()
+                                }
+                            }
+                            fetchedCustomPages.incrementAndGet()
+                        }
+                    }
             }
             return null
         }
@@ -1387,28 +1455,10 @@ class Main : AppCompatActivity() {
         }
 
         override fun onPostExecute(result: Void?) {
-            // APPEND NEW DATA TO THE ARRAYLIST AND SET THE ADAPTER TO THE
-            // LISTVIEW
-
-            // 4 cases:
-
-            // 1. has no default or custom subs selected
-            //    show all from default
-            // 2. has >=1 default and no custom subs selected
-            //    show default
-            // 3. has no default and >=1 custom subs selected
-            //    show custom
-            // 4. has >=1 default and >=1 custom subs selected
-            //    show both
-
             // Initialize with normal data
             try {
                 if (selectedSubs.size == 0 && selectedCustomSubs.size == 0 || selectedSubs.size != 0)
                     addToArry(tmp)
-
-                // Append custom subs data
-                if (selectedCustomSubs.size != 0)
-                    addToArryDirect(customTmp)
 
                 adapter!!.datas = datas
                 adapter!!.notifyDataSetChanged()
