@@ -69,7 +69,7 @@ class SubSelector : AppCompatActivity() {
         mInfo = findViewById<View>(R.id.info) as ImageButton
 
         //initially clear button is invisible
-        //        mClearText.setVisibility(View.INVISIBLE);
+        // mClearText.setVisibility(View.INVISIBLE);
 
         //clear button visibility on text change
         mEditText.addTextChangedListener(object : TextWatcher {
@@ -84,9 +84,9 @@ class SubSelector : AppCompatActivity() {
 
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 if (s.isNotEmpty()) {
-                    //                    mClearText.setVisibility(View.VISIBLE);
+                    //mClearText.setVisibility(View.VISIBLE);
                 } else {
-                    //                    mClearText.setVisibility(View.INVISIBLE);
+                    //mClearText.setVisibility(View.INVISIBLE);
                 }
             }
         })
@@ -94,8 +94,8 @@ class SubSelector : AppCompatActivity() {
         // Info button
         mInfo.setOnClickListener {
             val d1 = AlertDialog.Builder(ContextThemeWrapper(this@SubSelector, R.style.AppTheme))
-                    .setTitle("Tips")
-                    .setNeutralButton("Reset") { _, _ ->
+                    .setTitle(R.string.tips)
+                    .setNeutralButton(R.string.reset) { _, _ ->
                         // Reset selection to default
                         selectedSubs = HashSet()
                         selectedSubs.add(1)
@@ -108,11 +108,11 @@ class SubSelector : AppCompatActivity() {
                         startActivity(Intent(this@SubSelector, Main::class.java))
                         overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
                     }
-                    .setNegativeButton("Back") { _, _ ->
+                    .setNegativeButton(R.string.back) { _, _ ->
                         // do nothing
                     }
                     .setIcon(R.drawable.baseline_help_outline_white_36)
-                    .setMessage("Check the subreddits you'd like to see pictures from; press and hold each subreddit to see its description!\n\nNote that NSFW subreddits and content are hidden by default, see settings page to configure.")
+                    .setMessage(R.string.help_button_text)
                     .create()
             d1.show()
         }
@@ -126,10 +126,10 @@ class SubSelector : AppCompatActivity() {
             dialogBuilder.setView(dialogView)
             val edt = dialogView.findViewById<View>(R.id.subEntry) as EditText
 
-            dialogBuilder.setTitle("Add subreddit")
-            dialogBuilder.setMessage(R.string.add_sub_desc)
-            dialogBuilder.setPositiveButton("Done") { _, _ ->
-                progressDialog = ProgressDialog.show(this@SubSelector, "Adding sub", "...", true)
+            dialogBuilder.setTitle(R.string.add_subreddit)
+            dialogBuilder.setMessage(R.string.add_subreddit_desc)
+            dialogBuilder.setPositiveButton(R.string.done) { _, _ ->
+                progressDialog = ProgressDialog.show(this@SubSelector, getString(R.string.adding_sub), "...", true)
                 val inputs = edt.text.toString().split("\n")
 
                 // Reset counters
@@ -145,7 +145,7 @@ class SubSelector : AppCompatActivity() {
 
                 imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0)
             }
-            dialogBuilder.setNegativeButton("Cancel") { _, _ -> imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0) }
+            dialogBuilder.setNegativeButton(R.string.cancel) { _, _ -> imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0) }
             val b = dialogBuilder.create()
             b.show()
             edt.requestFocus()
@@ -284,7 +284,7 @@ class SubSelector : AppCompatActivity() {
 
         val subsToolbar = findViewById<View>(R.id.subs_toolbar) as Toolbar
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            subsToolbar.title = "Subreddits"
+            subsToolbar.title = getString(R.string.subreddits)
         }
         setSupportActionBar(subsToolbar)
         supportActionBar!!.setDisplayHomeAsUpEnabled(true)
@@ -336,11 +336,11 @@ class SubSelector : AppCompatActivity() {
             val d1: AlertDialog
             if (sub.isCustom) {
                 d1 = AlertDialog.Builder(ContextThemeWrapper(this@SubSelector, R.style.AppTheme))
-                        .setTitle("About " + sub.subName + ":")
-                        .setNegativeButton("Back") { _, _ ->
+                        .setTitle(getString(R.string.about) + " " + sub.subName + ":")
+                        .setNegativeButton(R.string.back) { _, _ ->
                             // Do nothing
                         }
-                        .setNeutralButton("Delete") { _, _ ->
+                        .setNeutralButton(R.string.delete) { _, _ ->
                             customSubsMap.remove(sub.subID)
                             val serial = gson.toJson(customSubsMap, intSubMap)
                             prefsEditor.putString("CUSTOM_SUBS", serial)
@@ -357,18 +357,18 @@ class SubSelector : AppCompatActivity() {
                             runOnUiThread {
                                 displayList()
                                 updateTabs()
-                                Toast.makeText(this@SubSelector, "Removed " + sub.subName, Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@SubSelector, getString(R.string.removed) + " " + sub.subName, Toast.LENGTH_SHORT).show()
                             }
                         }
-                        .setMessage(if (sub.desc.isNotEmpty()) sub.desc else "No description")
+                        .setMessage(if (sub.desc.isNotEmpty()) sub.desc else getString(R.string.no_description))
                         .create()
             } else {
                 d1 = AlertDialog.Builder(ContextThemeWrapper(this@SubSelector, R.style.AppTheme))
-                        .setTitle("About " + sub.subName + ":")
-                        .setNegativeButton("Back") { _, _ ->
+                        .setTitle(getString(R.string.about) + " " + sub.subName + ":")
+                        .setNegativeButton(R.string.back) { _, _ ->
                             // Do nothing
                         }
-                        .setMessage(if (sub.desc.isNotEmpty()) sub.desc else "No description")
+                        .setMessage(if (sub.desc.isNotEmpty()) sub.desc else getString(R.string.no_description))
                         .create()
             }
             d1.show()
@@ -380,7 +380,7 @@ class SubSelector : AppCompatActivity() {
         val back = findViewById<View>(R.id.updateSelection) as Button
         back.setOnClickListener {
             val response = StringBuffer()
-            response.append(" Saved: \n")
+            response.append("Saved: \n")
             val s = adp!!.subsList
             for (d in s) {
                 if (d.selected) {
@@ -429,7 +429,7 @@ class SubSelector : AppCompatActivity() {
             holder.name!!.text = sb.subName
             holder.name!!.isChecked = !sb.isCustom && selectedSubs.contains(sb.subID) || sb.isCustom && selectedCustomSubs.contains(sb.subID)
             holder.name!!.tag = sb
-            holder.isNSFW!!.text = if (sb.isNSFW) "NSFW" else ""
+            holder.isNSFW!!.text = if (sb.isNSFW) getString(R.string.nsfw) else ""
             holder.subscribers!!.text = Formatter.shortHandFormatter(sb.subscriberCount)
             return convertView
         }
@@ -478,7 +478,6 @@ class SubSelector : AppCompatActivity() {
 
         override fun doInBackground(vararg params: Void): Int? {
             // Parse subreddit names
-
             if (customSubName.isEmpty())
                 return -1
             // if begins with /r/, remove first slash

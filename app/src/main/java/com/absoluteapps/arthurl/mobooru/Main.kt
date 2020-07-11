@@ -313,7 +313,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                             overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
                         }
                     })
-                    d2.setNegativeButton("Cancel") { _, _ -> }
+                    d2.setNegativeButton(R.string.cancel) { _, _ -> }
                     val alertDialog = d2.create()
                     alertDialog.show()
 
@@ -337,7 +337,7 @@ class Main : AppCompatActivity(), CoroutineScope {
 
                     val d1 = AlertDialog.Builder(this@Main)
                             .setTitle("About")
-                            .setNegativeButton("Back") { _, _ ->
+                            .setNegativeButton(R.string.back) { _, _ ->
                                 // do nothing
                             }
                             .setIcon(R.drawable.ic_launcher)
@@ -424,7 +424,7 @@ class Main : AppCompatActivity(), CoroutineScope {
     fun initializeAdapter() {
         try {
             adapter = DataAdapter(this, R.layout.staggered, datas, showNsfw, showTitles)
-            title = Html.fromHtml("<font color='#ffffff'>" + (if (viewingFavorites) "Favorites" else appName) + "</font>")
+            title = Html.fromHtml("<font color='#ffffff'>" + (if (viewingFavorites) getString(R.string.favorites) else appName) + "</font>")
             staggeredGridView = findViewById<View>(R.id.gridView) as StaggeredGridView
             noDataView = findViewById(R.id.noData)
             staggeredGridView.adapter = adapter
@@ -444,18 +444,18 @@ class Main : AppCompatActivity(), CoroutineScope {
                     val d1: AlertDialog
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                         d1 = AlertDialog.Builder(this@Main)
-                                .setTitle("Favorites")
-                                .setNegativeButton("Back") { _, _ ->
+                                .setTitle(R.string.favorites)
+                                .setNegativeButton(R.string.back) { _, _ ->
                                     // do nothing
                                 }
-                                .setMessage("You have not added any favorites yet. To add a favorite, press the heart button when viewing an image!")
+                                .setMessage(R.string.no_favorites)
                                 .setOnDismissListener { restartMain(false) }
                                 .create()
 
                         d1.show()
                     } else {
                         Toast.makeText(applicationContext,
-                                "You have not added any favorites yet.",
+                                R.string.favorites,
                                 Toast.LENGTH_LONG).show()
                     }
                 } else {
@@ -464,8 +464,6 @@ class Main : AppCompatActivity(), CoroutineScope {
                 }
             }
         } catch (e: Exception) {
-//            noDataView!!.visibility = View.VISIBLE
-//            staggeredGridView!!.visibility = View.GONE
             e.printStackTrace()
         }
 
@@ -531,7 +529,7 @@ class Main : AppCompatActivity(), CoroutineScope {
             val selected = datas[position]
             val zoomImageView = InteractiveImageView(this@Main)
             isExpanded = false
-            progressDialog = ProgressDialog.show(this@Main, "Downloading", "...", true)
+            progressDialog = ProgressDialog.show(this@Main, getString(R.string.downloading), "...", true)
 
             object : Thread() {
                 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
@@ -627,11 +625,11 @@ class Main : AppCompatActivity(), CoroutineScope {
 
                             wallpaperFAB.setOnClickListener {
                                 val d = AlertDialog.Builder(this@Main)
-                                        .setTitle("Confirm")
-                                        .setMessage("Do you want to set this wallpaper?")
+                                        .setTitle(R.string.confirm)
+                                        .setMessage(R.string.set_wallpaper_prompt)
                                         .setIcon(getDrawable(R.drawable.ic_wallpaper_white_48dp))
                                         .setPositiveButton(android.R.string.yes) { _, _ ->
-                                            progressDialog = ProgressDialog.show(this@Main, "Setting Wallpaper", "...", true)
+                                            progressDialog = ProgressDialog.show(this@Main, getString(R.string.setting_wallpaper), "...", true)
 
                                             object : Thread() {
                                                 override fun run() {
@@ -643,7 +641,7 @@ class Main : AppCompatActivity(), CoroutineScope {
 
                                                         this@Main.runOnUiThread {
                                                             Toast.makeText(applicationContext,
-                                                                    "Wallpaper set!",
+                                                                    R.string.setting_wallpaper_success,
                                                                     Toast.LENGTH_LONG).show()
                                                         }
 
@@ -651,11 +649,10 @@ class Main : AppCompatActivity(), CoroutineScope {
                                                         progressDialog!!.dismiss()
                                                         this@Main.runOnUiThread {
                                                             Toast.makeText(applicationContext,
-                                                                    "Failed to set wallpaper.",
+                                                                    R.string.setting_wallpaper_fail,
                                                                     Toast.LENGTH_LONG).show()
                                                         }
                                                     }
-
                                                 }
                                             }.start()
                                         }
@@ -666,9 +663,9 @@ class Main : AppCompatActivity(), CoroutineScope {
                             }
 
                             shareFAB.setOnClickListener {
-                                val options = arrayOf("Share image", "Share image link", "Share Reddit link")
+                                val options = resources.getStringArray(R.array.share_options)
                                 val d = AlertDialog.Builder(this@Main)
-                                        .setTitle("Share")
+                                        .setTitle(R.string.share)
                                         .setItems(options) { _, which ->
                                             when (which) {
                                                 0 ->
@@ -725,7 +722,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                                 try {
                                     if (favorites.contains(selected)) {
                                         Toast.makeText(applicationContext,
-                                                "Already in favorites!",
+                                                R.string.already_favorited,
                                                 Toast.LENGTH_LONG).show()
                                     } else {
                                         favorites.add(selected)
@@ -733,7 +730,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                                         prefsEditor.putString("FAVORITES", serial)
                                         prefsEditor.apply()
                                         Toast.makeText(applicationContext,
-                                                "Added to favorites!",
+                                                R.string.favorited,
                                                 Toast.LENGTH_LONG).show()
                                     }
                                 } catch (e: Exception) {
@@ -755,7 +752,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                                         restartMain(false)
                                     }
                                     Toast.makeText(applicationContext,
-                                            "Removed from favorites",
+                                            R.string.unfavorited,
                                             Toast.LENGTH_LONG).show()
                                 } catch (e: Exception) {
                                     e.printStackTrace()
@@ -870,8 +867,8 @@ class Main : AppCompatActivity(), CoroutineScope {
             if (!showing) {
                 // Ask for user confirmation if not previously set
                 val confirm = AlertDialog.Builder(this@Main)
-                        .setTitle("Show NSFW?")
-                        .setPositiveButton("Yes") { _, _ ->
+                        .setTitle(R.string.show_nsfw_prompt)
+                        .setPositiveButton(R.string.yes) { _, _ ->
                             prefsEditor.putBoolean("SHOW_NSFW", true)
                             prefsEditor.apply()
 
@@ -884,7 +881,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                             nsfwToggle.isChecked = false
                         }
                         .setIcon(R.drawable.ic_launcher)
-                        .setMessage("This will also show content marked as NSFW from Reddit posts, are you sure?")
+                        .setMessage(R.string.show_nsfw_confirmation)
                         .setOnDismissListener {
                             nsfwToggle.isChecked = prefs.getBoolean("SHOW_NSFW", false)
                         }
@@ -1003,18 +1000,18 @@ class Main : AppCompatActivity(), CoroutineScope {
                 }
 
                 Toast.makeText(applicationContext,
-                        "Saved image $time to gallery",
+                        getString(R.string.save_gallery_success, time.toString()),
                         Toast.LENGTH_LONG).show()
             } else {
                 Toast.makeText(applicationContext,
-                        "Failed to save image $time to gallery",
+                        getString(R.string.save_gallery_fail, time.toString()),
                         Toast.LENGTH_LONG).show()
                 contentResolver.delete(uri!!, null, null)
                 uri = null
             }
         } catch (e: Exception) {
             Toast.makeText(applicationContext,
-                    "Failed to save image $time to gallery",
+                    getString(R.string.save_gallery_fail, time.toString()),
                     Toast.LENGTH_LONG).show()
             if (uri != null) {
                 contentResolver.delete(uri, null, null)
@@ -1029,7 +1026,7 @@ class Main : AppCompatActivity(), CoroutineScope {
 
         share.putExtra(Intent.EXTRA_TEXT, url)
 
-        startActivity(Intent.createChooser(share, "Share link"))
+        startActivity(Intent.createChooser(share, getString(R.string.share_link)))
     }
 
     fun shareWallpaperExtStorage(finalImg: Bitmap?) {
@@ -1062,15 +1059,14 @@ class Main : AppCompatActivity(), CoroutineScope {
             share.putExtra(Intent.EXTRA_STREAM, uri)
 
             // Show the social share chooser list
-            startActivity(Intent.createChooser(share, "Share image"))
+            startActivity(Intent.createChooser(share, getString(R.string.share_image)))
 
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(applicationContext,
-                    "Failed to share image, please check storage permissions",
+                    R.string.share_failed_permissions,
                     Toast.LENGTH_LONG).show()
         }
-
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
@@ -1079,14 +1075,14 @@ class Main : AppCompatActivity(), CoroutineScope {
                 saveToStorage(currentImg)
             } else {
                 Toast.makeText(applicationContext,
-                        "Permission to save images was not granted",
+                        R.string.no_permission_share,
                         Toast.LENGTH_LONG).show()
             }
             2 -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 shareWallpaperExtStorage(currentImg)
             } else {
                 Toast.makeText(applicationContext,
-                        "Permission to share/ save images was not granted",
+                        R.string.no_permission_share_save,
                         Toast.LENGTH_LONG).show()
             }
 
@@ -1139,8 +1135,8 @@ class Main : AppCompatActivity(), CoroutineScope {
                     // If first time launching app, show help snackbar
                     if (prefs.getBoolean("FIRST_LAUNCH", true)) {
                         val snackbar = Snackbar
-                                .make(drawerLayout, "Would you like to view the help guide?", 20000)
-                                .setAction("YES!") {
+                                .make(drawerLayout, getString(R.string.help_prompt), 20000)
+                                .setAction(R.string.yes) {
                                     overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
                                     startActivity(Intent(applicationContext, Help::class.java))
                                     overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
@@ -1212,7 +1208,7 @@ class Main : AppCompatActivity(), CoroutineScope {
             this@Main.runOnUiThread {
                 detProgressBar.visibility = View.GONE
                 Toast.makeText(applicationContext,
-                        "Indexing completed",
+                        R.string.indexing_complete,
                         Toast.LENGTH_LONG).show()
             }
         }
@@ -1241,7 +1237,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                 if (img == null) {
                     this@Main.runOnUiThread {
                         Toast.makeText(applicationContext,
-                                "Error loading image",
+                                R.string.error_loading_image,
                                 Toast.LENGTH_LONG).show()
                     }
                     return null
@@ -1250,7 +1246,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                 if (bitmapSize > MAX_BITMAP_SIZE) {
                     this@Main.runOnUiThread {
                         Toast.makeText(applicationContext,
-                                "Error loading image: image too large",
+                                R.string.error_loading_image_size,
                                 Toast.LENGTH_LONG).show()
                     }
                 }
@@ -1268,8 +1264,6 @@ class Main : AppCompatActivity(), CoroutineScope {
 
     inner class LoadMorePhotos : AsyncTask<Void, Void, Void>() {
         private lateinit var tmp: JSONArray
-
-        //        private var customTmp = arrayOfNulls<JSONArray>(selectedCustomSubs.size)
         private var fetchedCustomPages = AtomicInteger(0)
 
         override fun doInBackground(vararg arg0: Void): Void? {
