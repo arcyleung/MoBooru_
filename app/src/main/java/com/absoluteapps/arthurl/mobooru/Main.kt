@@ -198,7 +198,7 @@ class Main : AppCompatActivity(), CoroutineScope {
             toolbar.visibility = if (!prefs.getBoolean("FULLSCREEN", false)) {
                 View.VISIBLE
             } else View.GONE
-            System.out.println("Visibility: " + toolbar.visibility)
+
             showTitles = prefs.getBoolean("SHOW_TITLES", true)
             thumbnailSize = prefs.getInt("THUMBNAIL_SIZE", 300)
 
@@ -244,7 +244,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                         finish()
                     } else {
                         Toast.makeText(applicationContext,
-                                "Please wait until indexing finishes...",
+                                R.string.indexing_wait,
                                 Toast.LENGTH_LONG).show()
                     }
                     return@OnNavigationItemSelectedListener true
@@ -260,7 +260,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                         restartMain(true)
                     } else {
                         Toast.makeText(applicationContext,
-                                "Please wait until indexing finishes...",
+                                R.string.indexing_wait,
                                 Toast.LENGTH_LONG).show()
                     }
                     return@OnNavigationItemSelectedListener true
@@ -276,22 +276,22 @@ class Main : AppCompatActivity(), CoroutineScope {
                     numberPicker.maxValue = MAX_COLUMNS_PORTRAIT
                     numberPicker.minValue = MIN_COLUMNS_PORTRAIT
 
-                    d2.setTitle("Number of columns")
+                    d2.setTitle(R.string.number_of_columns)
                     if (display.rotation == Surface.ROTATION_0) {
                         numberPicker.maxValue = MAX_COLUMNS_PORTRAIT
                         numberPicker.minValue = MIN_COLUMNS_PORTRAIT
-                        d2.setMessage("Default portrait: $DEFAULT_COLUMNS_PORTRAIT")
+                        d2.setMessage(getString(R.string.default_portrait, DEFAULT_COLUMNS_PORTRAIT))
                         numberPicker.value = prefs.getInt("COLUMNS_PORTRAIT", DEFAULT_COLUMNS_PORTRAIT)
                     } else {
                         numberPicker.maxValue = MAX_COLUMNS_LANDSCAPE
                         numberPicker.minValue = MIN_COLUMNS_LANDSCAPE
-                        d2.setMessage("Default landscape: $DEFAULT_COLUMNS_LANDSCAPE")
+                        d2.setMessage(getString(R.string.default_landscape,  DEFAULT_COLUMNS_LANDSCAPE))
                         numberPicker.value = prefs.getInt("COLUMNS_LANDSCAPE", DEFAULT_COLUMNS_LANDSCAPE)
                     }
                     d2.setView(dialogView)
 
                     numberPicker.wrapSelectorWheel = false
-                    d2.setPositiveButton("Done", object : DialogInterface.OnClickListener {
+                    d2.setPositiveButton(R.string.done, object : DialogInterface.OnClickListener {
                         var rotation = display.rotation
 
                         override fun onClick(dialogInterface: DialogInterface, i: Int) {
@@ -336,7 +336,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                     }
 
                     val d1 = AlertDialog.Builder(this@Main)
-                            .setTitle("About")
+                            .setTitle(R.string.about)
                             .setNegativeButton(R.string.back) { _, _ ->
                                 // do nothing
                             }
@@ -367,14 +367,14 @@ class Main : AppCompatActivity(), CoroutineScope {
 
         if (!isNetworkAvailable) {
             val d = AlertDialog.Builder(this@Main)
-                    .setTitle("No network connection")
-                    .setNegativeButton("Quit") { _, _ ->
+                    .setTitle(R.string.no_internet)
+                    .setNegativeButton(R.string.quit) { _, _ ->
                         moveTaskToBack(true)
                         Process.killProcess(Process.myPid())
                         exitProcess(1)
                     }
                     .setIcon(R.drawable.ic_launcher)
-                    .setMessage("Sorry, please connect to Wi-Fi or cellular service and try again later!")
+                    .setMessage(R.string.no_internet_help)
                     .create()
 
             d.show()
@@ -410,7 +410,7 @@ class Main : AppCompatActivity(), CoroutineScope {
         if (timeToUpdate) {
             executeAsyncTask(FetchSubs())
             Toast.makeText(applicationContext,
-                    "Updating subreddit index...",
+                    R.string.updating_index,
                     Toast.LENGTH_LONG).show()
         }
 

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">MoBooru</string>
+    <string name="action_settings_subs">Subreddits</string>
+    <string name="title_activity_settings_subs">Subreddit selection</string>
+    <string name="defaultsub">1</string>
+
+    <string name="navigation_drawer_open">打开</string>
+    <string name="navigation_drawer_close">关闭</string>
+
+    <string name="yes">是</string>
+    <string name="done">完成</string>
+    <string name="cancel">取消</string>
+    <string name="back">后</string>
+    <string name="delete">删除</string>
+    <string name="quit">退出</string>
+    <string name="tips">提示</string>
+    <string name="reset">重设</string>
+
+    <string name="title_activity_help">支援</string>
+    <string name="help_1">点击左上方的图标或从左边缘滑动来访问设定画面</string>
+    <string name="help_2">选择您想看的 Subreddit</string>
+    <string name="help_3">就这么简单!</string>
+    <string name="search_subreddits">搜索 subreddits</string>
+    <string name="add_subreddit_desc">\n在此处添加 subreddits:\n您可以一次添加多个，并以新行分隔</string>
+    <string name="add_sub_hint">输入 subreddit e.g. r/animenocontext</string>
+    <string name="all_tab">所有</string>
+    <string name="selected_tab">已选</string>
+    <string name="noData">这里什么都没有!\n 请选择另一个 subreddit</string>
+    <string name="about">关于</string>
+    <string name="removed">已移除</string>
+    <string name="no_description">没有说明</string>
+    <string name="subreddits">Subreddits</string>
+    <string name="nsfw">NSFW</string>
+    <string name="favorites">最爱</string>
+    <string name="no_favorites">您尚未添加任何最爱。 要添加最爱，请在查看图像时按心脏按钮</string>
+    <string name="downloading">正在下载</string>
+    <string name="confirm">确认</string>
+    <string name="set_wallpaper_prompt">您要将此设置为墙纸吗？</string>
+    <string name="setting_wallpaper">设置墙纸</string>
+    <string name="setting_wallpaper_success">设置墙纸成功!</string>
+    <string name="setting_wallpaper_fail">设置墙纸失败!</string>
+    <string name="share">分享</string>
+    <string name="already_favorited">已加入最爱!</string>
+    <string name="favorited">加入最爱!</string>
+    <string name="unfavorited">从最爱删除!</string>
+    <string name="show_nsfw_prompt">显示 NSFW?</string>
+
+    <string name="show_nsfw_confirmation">这还会显示Reddit帖子中标记为 NSFW 的内容，确定吗?</string>
+    <string name="share_link">分享链接</string>
+    <string name="share_image">分享图像</string>
+    <string name="share_failed_permissions">共享图片失败，请检查存储权限</string>
+    <string name="no_permission_share">未授予保存图像的权限</string>
+    <string name="no_permission_share_save">未授予共享/保存图像的权限</string>
+    <string name="help_prompt">您要查看帮助指南吗?</string>
+    <string name="indexing_complete">索引完成</string>
+    <string name="error_loading_image">加载图片失败</string>
+    <string name="error_loading_image_size">加载图片失败: 图片太大</string>
+
+    <string-array name="share_options">
+        <item>分享图像</item>
+        <item>分享图像链接</item>
+        <item>分享 Reddit 链接</item>
+    </string-array>
+
+    <string name="save_gallery_success">将图片 %1$s 保存到图库</string>
+    <string name="save_gallery_fail">保存图片 %1$s 失败!</string>
+
+
+    <string name="help_button_text">勾选您想查看的 subreddit; 按住每个 subreddit 以查看其描述\n\n请注意，默认情况下，NSFW 的 subreddit 和内容是隐藏的，如果希望查看它们，请从侧栏切换设置。</string>
+    <string name="add_subreddit">加 subreddit</string>
+    <string name="updating_index">正在更新 subreddit 索引...</string>
+    <string name="no_internet_help">抱歉，请连接到 Wi-Fi 或移动网络服务，然后重试!</string>
+
+    <string name="no_internet">无网络连接</string>
+    <string name="indexing_wait">请等待索引完成...</string>
+    <string name="number_of_columns">列数</string>
+    <string name="default_portrait">默认肖像列数: %1$d</string>
+    <string name="default_landscape">默认景观列数: %1$d"</string>
+</resources>

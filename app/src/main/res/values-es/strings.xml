@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">MoBooru</string>
+    <string name="action_settings_subs">Subreddits</string>
+    <string name="title_activity_settings_subs">Selección de Subreddit</string>
+    <string name="defaultsub">1</string>
+
+    <string name="navigation_drawer_open">Abrir el cajón de navegación</string>
+    <string name="navigation_drawer_close">Cerrar el cajón de navegación</string>
+
+    <string name="yes">Sí</string>
+    <string name="done">Completo</string>
+    <string name="cancel">Cancelar</string>
+    <string name="back">Regresa</string>
+    <string name="delete">Eliminar</string>
+    <string name="quit">Dejar</string>
+    <string name="tips">Consejos</string>
+    <string name="reset">Reiniciar</string>
+
+    <string name="title_activity_help">Ayuda</string>
+    <string name="help_1">Acceda al menú tocando el icono superior izquierdo o deslizando desde el borde izquierdo</string>
+    <string name="help_2">Seleccionar el contenido de subreddits que desea ver</string>
+    <string name="help_3">¡Que te diviertas!</string>
+    <string name="search_subreddits">Buscar subreddits</string>
+    <string name="add_subreddit_desc">\nAñadir subreddits aquí!\nPuede agregar múltiples a la vez separados con nuevas líneas</string>
+    <string name="add_sub_hint">Ingrese subreddit, p. r/animenocontext</string>
+    <string name="all_tab">Todas</string>
+    <string name="selected_tab">Seleccionado</string>
+    <string name="noData">No hay nada aquí\n Por favor seleccione otro subreddit</string>
+    <string name="about">Acerca de</string>
+    <string name="removed">Remoto</string>
+    <string name="no_description">Sin descripción</string>
+    <string name="subreddits">Subreddits</string>
+    <string name="nsfw">NSFW</string>
+    <string name="favorites">Favoritos</string>
+    <string name="no_favorites">Aún no ha agregado favoritos. Para agregar un favorito, presione el botón del corazón cuando vea una imagen</string>
+    <string name="downloading">Descargando</string>
+    <string name="confirm">Confirmar</string>
+    <string name="set_wallpaper_prompt">¿Quieres configurar esto como fondo de pantalla?</string>
+    <string name="setting_wallpaper">Establecer fondo de pantalla</string>
+    <string name="setting_wallpaper_success">Establecer fondo de pantalla!</string>
+    <string name="setting_wallpaper_fail">No se pudo establecer el fondo de pantalla!</string>
+    <string name="share">Compartir</string>
+    <string name="already_favorited">Ya en favoritos!</string>
+    <string name="favorited">Añadido a favoritos!</string>
+    <string name="unfavorited">Eliminado de favoritos!</string>
+    <string name="show_nsfw_prompt">Mostrar NSFW?</string>
+
+    <string name="show_nsfw_confirmation">Esto también mostrará contenido marcado como NSFW de las publicaciones de Reddit, ¿estás seguro?</string>
+    <string name="share_link">Compartir enlace</string>
+    <string name="share_image">Compartir imagen</string>
+    <string name="share_failed_permissions">No se pudo compartir la imagen, verifique los permisos de almacenamiento</string>
+    <string name="no_permission_share">No se otorgó permiso para guardar imágenes</string>
+    <string name="no_permission_share_save">No se otorgó permiso para compartir/ guardar imágenes</string>
+    <string name="help_prompt">¿Desea ver la guía de ayuda?</string>
+    <string name="indexing_complete">Indexación completada</string>
+    <string name="error_loading_image">Error al cargar la imagen</string>
+    <string name="error_loading_image_size">Error al cargar la imagen: imagen demasiado grande</string>
+
+    <string-array name="share_options">
+        <item>Compatir imagen</item>
+        <item>Compatir enlace de imagen</item>
+        <item>Compatir enlace Reddit</item>
+    </string-array>
+
+    <string name="save_gallery_success">Imagen guardada %1$s en la galería</string>
+    <string name="save_gallery_fail">Error al guardar la imagen %1$s en la galería</string>
+
+    <string name="help_button_text">Marque los subreddits de los que le gustaría ver imágenes; mantenga presionado cada subreddit para ver su descripción\n\nTenga en cuenta que los subreddits y el contenido de NSFW están ocultos de forma predeterminada, cambie la configuración de la barra lateral si desea verlos.</string>
+    <string name="add_subreddit">Agregar subreddit</string>
+    <string name="updating_index">Actualizando el índice subreddit ...</string>
+    <string name="no_internet_help">Conéctese al servicio celular o Wi-Fi e intente nuevamente más tarde</string>
+
+    <string name="no_internet">No hay conexion de red</string>
+    <string name="indexing_wait">Espere hasta que termine la indexación ...</string>
+    <string name="number_of_columns">Número de columnas</string>
+    <string name="default_portrait">Retrato predeterminado: %1$d</string>
+    <string name="default_landscape">Paisaje predeterminado: %1$d</string>
+</resources>

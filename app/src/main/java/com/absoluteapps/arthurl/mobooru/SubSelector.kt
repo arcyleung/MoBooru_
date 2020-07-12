@@ -129,7 +129,7 @@ class SubSelector : AppCompatActivity() {
             dialogBuilder.setTitle(R.string.add_subreddit)
             dialogBuilder.setMessage(R.string.add_subreddit_desc)
             dialogBuilder.setPositiveButton(R.string.done) { _, _ ->
-                progressDialog = ProgressDialog.show(this@SubSelector, getString(R.string.adding_sub), "...", true)
+                progressDialog = ProgressDialog.show(this@SubSelector, getString(R.string.add_subreddit), "...", true)
                 val inputs = edt.text.toString().split("\n")
 
                 // Reset counters
