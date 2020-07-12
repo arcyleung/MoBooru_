@@ -228,8 +228,8 @@ class SubSelector : AppCompatActivity() {
     }
 
     private fun updateTabs() {
-        mTabLayout.getTabAt(0)!!.text = "ALL (${allShownSubsCount})"
-        mTabLayout.getTabAt(1)!!.text = "SELECTED (${selectedShownSubsCount})"
+        mTabLayout.getTabAt(0)!!.text = getString(R.string.all_tab) + " (${allShownSubsCount})"
+        mTabLayout.getTabAt(1)!!.text = getString(R.string.selected_tab) + " (${selectedShownSubsCount})"
     }
 
     private fun displayList() {

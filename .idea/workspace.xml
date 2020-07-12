@@ -17,8 +17,10 @@
     <list default="true" id="5ea23361-157b-4727-bd16-c34dabf76404" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/absoluteapps/arthurl/mobooru/Main.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/absoluteapps/arthurl/mobooru/Main.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/java/com/absoluteapps/arthurl/mobooru/SubSelector.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/com/absoluteapps/arthurl/mobooru/SubSelector.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/menu/nav_menu.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/menu/nav_menu.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/values-es/strings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values-es/strings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/values-zh/strings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values-zh/strings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/res/values/strings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/strings.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -72,6 +74,7 @@
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="ApkExportedModule" value="app" />
     <property name="BundleExportedModule" value="app" />
     <property name="DEBUGGABLE_DEVICE" value="emulator-5554" />
@@ -272,10 +275,10 @@
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
     <state x="540" y="280" key="AndroidCreateResourceDirectoryDialog/1920.0.1920.1050/0.0.1920.1050/-1200.-514.1200.1890@0.0.1920.1050" timestamp="1594584382426" />
-    <state x="819" y="355" key="AndroidCreateXmlResourceDialog" timestamp="1594529936105">
+    <state x="819" y="355" key="AndroidCreateXmlResourceDialog" timestamp="1594588943948">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state x="819" y="355" key="AndroidCreateXmlResourceDialog/1920.0.1920.1050/0.0.1920.1050/-1200.-514.1200.1890@0.0.1920.1050" timestamp="1594529936105" />
+    <state x="819" y="355" key="AndroidCreateXmlResourceDialog/1920.0.1920.1050/0.0.1920.1050/-1200.-514.1200.1890@0.0.1920.1050" timestamp="1594588943948" />
     <state x="2739" y="355" key="AndroidCreateXmlResourceDialog/1920.0.1920.1050/0.0.1920.1050/-1200.-514.1200.1890@1920.0.1920.1050" timestamp="1594254803367" />
     <state x="815" y="290" key="AndroidProcessChooserDialog" timestamp="1591345490351">
       <screen x="0" y="0" width="1920" height="1050" />
@@ -339,10 +342,10 @@
     </state>
     <state x="536" y="261" width="847" height="602" key="com.intellij.xdebugger.impl.breakpoints.ui.BreakpointsDialogFactory$2/1920.0.1920.1050/0.0.1920.1050/-1200.-514.1200.1890@0.0.1920.1050" timestamp="1591580799702" />
     <state x="2456" y="261" key="com.intellij.xdebugger.impl.breakpoints.ui.BreakpointsDialogFactory$2/1920.0.1920.1050/0.0.1920.1050/-1200.-514.1200.1890@1920.0.1920.1050" timestamp="1591610093579" />
-    <state x="656" y="257" width="607" height="536" key="find.popup" timestamp="1594586400662">
+    <state x="656" y="257" width="607" height="536" key="find.popup" timestamp="1594588985670">
       <screen x="0" y="0" width="1920" height="1050" />
     </state>
-    <state x="656" y="257" width="607" height="536" key="find.popup/1920.0.1920.1050/0.0.1920.1050/-1200.-514.1200.1890@0.0.1920.1050" timestamp="1594586400662" />
+    <state x="656" y="257" width="607" height="536" key="find.popup/1920.0.1920.1050/0.0.1920.1050/-1200.-514.1200.1890@0.0.1920.1050" timestamp="1594588985670" />
     <state x="2576" y="257" width="607" height="536" key="find.popup/1920.0.1920.1050/0.0.1920.1050/-1200.-514.1200.1890@1920.0.1920.1050" timestamp="1594254756121" />
     <state x="701" y="168" key="refactoring.ChangeSignatureDialog" timestamp="1591268851808">
       <screen x="0" y="0" width="1920" height="1050" />

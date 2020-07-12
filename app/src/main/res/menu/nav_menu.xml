@@ -6,13 +6,13 @@
         android:checkableBehavior="none"
         android:id="@+id/screens">
         <item android:id="@+id/nav_subs"
-            android:title="Subreddits" />
+            android:title="@string/subreddits" />
 
         <item android:id="@+id/nav_favorites"
-            android:title="Favorites" />
+            android:title="@string/favorites" />
 
         <item android:id="@+id/nav_back"
-            android:title="Back to selected subs" />
+            android:title="@string/back_to_selected_subs" />
 
     </group>
     <group
@@ -22,25 +22,25 @@
         >
         <item
             android:id="@+id/nsfw_toggle"
-            android:title="Show NSFW"
+            android:title="@string/show_nsfw"
             app:actionLayout="@layout/switch_item" />
         <item
             android:id="@+id/fullscreen_toggle"
-            android:title="Fullscreen"
+            android:title="@string/fullscreen"
             app:actionLayout="@layout/switch_item" />
         <item
             android:id="@+id/title_toggle"
-            android:title="Show Titles"
+            android:title="@string/show_titles"
             app:actionLayout="@layout/switch_item" />
         <item android:id="@+id/columns"
-            android:title="Columns"/>
+            android:title="@string/columns"/>
     </group>
     <group
         android:checkableBehavior="none"
         android:id="@+id/documentation">
         <item android:id="@+id/nav_help"
-            android:title="Help"/>
+            android:title="@string/help"/>
         <item android:id="@+id/nav_about"
-            android:title="About"/>
+            android:title="@string/about"/>
     </group>
 </menu>

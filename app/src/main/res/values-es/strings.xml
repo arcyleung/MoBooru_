@@ -77,4 +77,10 @@
     <string name="number_of_columns">Número de columnas</string>
     <string name="default_portrait">Retrato predeterminado: %1$d</string>
     <string name="default_landscape">Paisaje predeterminado: %1$d</string>
+    <string name="show_nsfw">Mostrar NSFW</string>
+    <string name="fullscreen">Pantalla completa</string>
+    <string name="show_titles">Mostrar títulos</string>
+    <string name="columns">Columnas</string>
+    <string name="back_to_selected_subs">Volver a seleccionado</string>
+    <string name="help">Ayuda</string>
 </resources>

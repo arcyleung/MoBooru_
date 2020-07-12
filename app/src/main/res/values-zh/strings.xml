@@ -3,7 +3,7 @@
 
     <string name="app_name">MoBooru</string>
     <string name="action_settings_subs">Subreddits</string>
-    <string name="title_activity_settings_subs">Subreddit selection</string>
+    <string name="title_activity_settings_subs">Subreddit 选择</string>
     <string name="defaultsub">1</string>
 
     <string name="navigation_drawer_open">打开</string>
@@ -64,7 +64,7 @@
         <item>分享 Reddit 链接</item>
     </string-array>
 
-    <string name="save_gallery_success">将图片 %1$s 保存到图库</string>
+    <string name="save_gallery_success">保存图片 %1$s 成功!</string>
     <string name="save_gallery_fail">保存图片 %1$s 失败!</string>
 
 
@@ -78,4 +78,10 @@
     <string name="number_of_columns">列数</string>
     <string name="default_portrait">默认肖像列数: %1$d</string>
     <string name="default_landscape">默认景观列数: %1$d"</string>
+    <string name="show_nsfw">显示 NSFW</string>
+    <string name="fullscreen">全屏</string>
+    <string name="show_titles">显示标题</string>
+    <string name="columns">列数</string>
+    <string name="back_to_selected_subs">返回所选</string>
+    <string name="help">支援</string>
 </resources>

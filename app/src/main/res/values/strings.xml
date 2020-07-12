@@ -78,4 +78,10 @@
     <string name="number_of_columns">Number of columns</string>
     <string name="default_portrait">"Default portrait: %1$d"</string>
     <string name="default_landscape">"Default landscape: %1$d"</string>
+    <string name="show_nsfw">Show NSFW</string>
+    <string name="fullscreen">Fullscreen</string>
+    <string name="show_titles">Show Titles</string>
+    <string name="columns">Columns</string>
+    <string name="back_to_selected_subs">Back to selected subs</string>
+    <string name="help">Help</string>
 </resources>
