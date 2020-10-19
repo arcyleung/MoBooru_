@@ -70,11 +70,11 @@
 
     <string name="help_button_text">勾选您想查看的 subreddit; 按住每个 subreddit 以查看其描述\n\n请注意，默认情况下，NSFW 的 subreddit 和内容是隐藏的，如果希望查看它们，请从侧栏切换设置。</string>
     <string name="add_subreddit">加 subreddit</string>
-    <string name="updating_index">正在更新 subreddit 索引...</string>
+    <string name="updating_index">正在更新 subreddit 索引…</string>
     <string name="no_internet_help">抱歉，请连接到 Wi-Fi 或移动网络服务，然后重试!</string>
 
     <string name="no_internet">无网络连接</string>
-    <string name="indexing_wait">请等待索引完成...</string>
+    <string name="indexing_wait">请等待索引完成…</string>
     <string name="number_of_columns">列数</string>
     <string name="default_portrait">默认肖像列数: %1$d</string>
     <string name="default_landscape">默认景观列数: %1$d"</string>
@@ -84,4 +84,5 @@
     <string name="columns">列数</string>
     <string name="back_to_selected_subs">返回所选</string>
     <string name="help">支援</string>
+    <string name="darkmode">暗黑模式</string>
 </resources>

@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "823467260739",
+    "firebase_url": "https://mobooru-f4cb7.firebaseio.com",
+    "project_id": "mobooru-f4cb7",
+    "storage_bucket": "mobooru-f4cb7.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:823467260739:android:e218c04ae407c40c294df6",
+        "android_client_info": {
+          "package_name": "com.absoluteapps.arthurl.mobooru"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "823467260739-p2b33nktn07mi1vsemu49eloslmtel4p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1oTIXn0KkJ96UCQWO0uShkz4R9WszgAk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "823467260739-p2b33nktn07mi1vsemu49eloslmtel4p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

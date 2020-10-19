@@ -70,11 +70,11 @@
 
     <string name="help_button_text">Check the subreddits you\'d like to see pictures from; press and hold each subreddit to see its description!\n\nNote that NSFW subreddits and content are hidden by default, toggle the setting from the side bar if you wish to see them.</string>
     <string name="add_subreddit">Add subreddit</string>
-    <string name="updating_index">Updating subreddit index...</string>
+    <string name="updating_index">Updating subreddit index…</string>
     <string name="no_internet_help">Sorry, please connect to Wi-Fi or cellular service and try again later!</string>
 
     <string name="no_internet">No network connection</string>
-    <string name="indexing_wait">Please wait until indexing finishes...</string>
+    <string name="indexing_wait">Please wait until indexing finishes…</string>
     <string name="number_of_columns">Number of columns</string>
     <string name="default_portrait">"Default portrait: %1$d"</string>
     <string name="default_landscape">"Default landscape: %1$d"</string>
@@ -84,4 +84,5 @@
     <string name="columns">Columns</string>
     <string name="back_to_selected_subs">Back to selected subs</string>
     <string name="help">Help</string>
+    <string name="darkmode">Dark Mode</string>
 </resources>

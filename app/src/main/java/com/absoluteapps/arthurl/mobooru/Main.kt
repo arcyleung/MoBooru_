@@ -11,6 +11,7 @@ import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.graphics.Point
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
@@ -79,6 +80,8 @@ class Main : AppCompatActivity(), CoroutineScope {
     internal var selectedString = ""
     private var showNsfw: Boolean = false
     private var showTitles: Boolean = false
+    private var fullscreen: Boolean = false
+    private var darkmode: Boolean = false
     internal var selectedURL = "https://redditbooru.com/images/?sources=$selectedString&afterDate="
     internal lateinit var doc: Document
     internal lateinit var redditSubs: Elements
@@ -141,12 +144,59 @@ class Main : AppCompatActivity(), CoroutineScope {
             return activeNetworkInfo != null && activeNetworkInfo.isConnected
         }
 
-    @RequiresApi(Build.VERSION_CODES.KITKAT)
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         job = Job()
-        setTheme(R.style.AppTheme)
+        // Sharedprefs
+        try {
+            prefs = PreferenceManager.getDefaultSharedPreferences(baseContext)
+            prefsEditor = prefs.edit()
+            // Get saved subs
+            subsMap = gson.fromJson(prefs.getString("SUBS", "{1: {subName: 'Awwnime', subID: 1, subscriberCount: 0, selected: false, isNSFW: false, desc: '', isCustom: false}}"), intSubMap)
+            customSubsMap = gson.fromJson(prefs.getString("CUSTOM_SUBS", "{}"), intSubMap)
+            selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[1]"), intSet)
+            selectedCustomSubs = gson.fromJson(prefs.getString("SELECTED_CUSTOM_SUBS", "[]"), intSet)
+            favorites = gson.fromJson(prefs.getString("FAVORITES", "[]"), dataList)
+            showNsfw = prefs.getBoolean("SHOW_NSFW", false)
+            fullscreen = prefs.getBoolean("FULLSCREEN", false)
+            darkmode = prefs.getBoolean("DARK_MODE", false)
+            showTitles = prefs.getBoolean("SHOW_TITLES", true)
+            thumbnailSize = prefs.getInt("THUMBNAIL_SIZE", 300)
+
+            // Fullscreen to false by default
+            if (!prefs.contains("FULLSCREEN")) {
+                prefsEditor.putBoolean("FULLSCREEN", false).apply()
+            }
+
+            // Show titles to true by default
+            if (!prefs.contains("SHOW_TITLES")) {
+                prefsEditor.putBoolean("SHOW_TITLES", true).apply()
+            }
+
+            // Dark mode
+            if (!prefs.contains("DARK_MODE")) {
+                prefsEditor.putBoolean("DARK_MODE", false).apply()
+            }
+
+            // Thumbnail size is 300 by default
+            if (!prefs.contains("THUMBNAIL_SIZE")) {
+                prefsEditor.putInt("THUMBNAIL_SIZE", 300).apply()
+            }
+
+            // Time to reindex subs
+            if (!prefs.contains("UPDATE_TIME") || System.currentTimeMillis() - prefs.getLong("UPDATE_TIME", 0) > 604800000) {
+                timeToUpdate = true
+            }
+
+            // Dark mode
+            setTheme(if (prefs.getBoolean("DARK_MODE", false)) R.style.AppThemeDark else R.style.AppThemeLight)
+
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            timeToUpdate = true
+        }
+        super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
         windowManager.defaultDisplay.getMetrics(displayMetrics)
 
         navigationView = findViewById<View>(R.id.navigationView) as NavigationView
@@ -157,9 +207,9 @@ class Main : AppCompatActivity(), CoroutineScope {
 
         inDetProgressBar = findViewById<View>(R.id.indeterminate_progress_bar) as ProgressBar
         inDetProgressBar.visibility = View.GONE
-        inDetProgressBar.visibility = View.GONE
 
         toolbar = findViewById<View>(R.id.toolbar) as Toolbar
+
         val mDrawerToggle: ActionBarDrawerToggle
         setSupportActionBar(toolbar)
         val actionBar = supportActionBar
@@ -184,58 +234,10 @@ class Main : AppCompatActivity(), CoroutineScope {
 
         supportActionBar!!.setDisplayShowHomeEnabled(true)
 
-        // Sharedprefs
-        try {
-            prefs = PreferenceManager.getDefaultSharedPreferences(baseContext)
-            prefsEditor = prefs.edit()
-            // Get saved subs
-            subsMap = gson.fromJson(prefs.getString("SUBS", "{1: {subName: 'Awwnime', subID: 1, subscriberCount: 0, selected: false, isNSFW: false, desc: '', isCustom: false}}"), intSubMap)
-            customSubsMap = gson.fromJson(prefs.getString("CUSTOM_SUBS", "{}"), intSubMap)
-            selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[1]"), intSet)
-            selectedCustomSubs = gson.fromJson(prefs.getString("SELECTED_CUSTOM_SUBS", "[]"), intSet)
-            favorites = gson.fromJson(prefs.getString("FAVORITES", "[]"), dataList)
-            showNsfw = prefs.getBoolean("SHOW_NSFW", false)
-            toolbar.visibility = if (!prefs.getBoolean("FULLSCREEN", false)) {
-                View.VISIBLE
-            } else View.GONE
-
-            showTitles = prefs.getBoolean("SHOW_TITLES", true)
-            thumbnailSize = prefs.getInt("THUMBNAIL_SIZE", 300)
-
-            // Fullscreen to false by default
-            if (!prefs.contains("FULLSCREEN")) {
-                prefsEditor.putBoolean("FULLSCREEN", false).apply()
-            }
-
-            if (prefs.getBoolean("FULLSCREEN", false)) {
-                immersiveFullscreen()
-            } else {
-                nonFullscreen()
-            }
-
-            // Show titles to true by default
-            if (!prefs.contains("SHOW_TITLES")) {
-                prefsEditor.putBoolean("SHOW_TITLES", true).apply()
-            }
-
-            // Thumbnail size is 300 by default
-            if (!prefs.contains("THUMBNAIL_SIZE")) {
-                prefsEditor.putInt("THUMBNAIL_SIZE", 300).apply()
-            }
-
-            // Time to reindex subs
-            if (!prefs.contains("UPDATE_TIME") || System.currentTimeMillis() - prefs.getLong("UPDATE_TIME", 0) > 604800000) {
-                timeToUpdate = true
-            }
-
-        } catch (ex: Exception) {
-            ex.printStackTrace()
-            timeToUpdate = true
-        }
-
         viewingFavorites = if (intent.getSerializableExtra("viewingFavorites") == null) false else intent.getSerializableExtra("viewingFavorites") as Boolean
         setFavoriteSubs()
 
+        navigationView.setBackgroundColor(if (darkmode) Color.parseColor("#434343") else Color.parseColor("#FFFFFF"))
         navigationView.setNavigationItemSelectedListener(NavigationView.OnNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_subs -> {
@@ -285,7 +287,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                     } else {
                         numberPicker.maxValue = MAX_COLUMNS_LANDSCAPE
                         numberPicker.minValue = MIN_COLUMNS_LANDSCAPE
-                        d2.setMessage(getString(R.string.default_landscape,  DEFAULT_COLUMNS_LANDSCAPE))
+                        d2.setMessage(getString(R.string.default_landscape, DEFAULT_COLUMNS_LANDSCAPE))
                         numberPicker.value = prefs.getInt("COLUMNS_LANDSCAPE", DEFAULT_COLUMNS_LANDSCAPE)
                     }
                     d2.setView(dialogView)
@@ -314,6 +316,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                         }
                     })
                     d2.setNegativeButton(R.string.cancel) { _, _ -> }
+                    d2.setOnDismissListener { updateScreenMode() }
                     val alertDialog = d2.create()
                     alertDialog.show()
 
@@ -343,13 +346,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                             .setIcon(R.drawable.ic_launcher)
                             .setMessage(Html.fromHtml(appName + " v" + verString + "<br>Developer: Arthur Leung<br/><a href=\"http://arcyleung.com\">http://arcyleung.com</a><br/><br/>Follow me on <a href=\"https://twitter.com/arcyleung\">Twitter</a> or <a href=\"https://www.linkedin.com/in/arcyleung/\">LinkedIn</a>! <br/> <br/> Please direct any questions and suggestions to <a href=\"mailto:arcyleung@gmail.com?Subject=MoBooru Inquiry\" target=\"_top\">arcyleung@gmail.com</a>\n" +
                                     "</p> or if you want to help support development!"))
-                            .setOnDismissListener {
-                                if (prefs.getBoolean("FULLSCREEN", false)) {
-                                    immersiveFullscreen()
-                                } else {
-                                    nonFullscreen()
-                                }
-                            }
+                            .setOnDismissListener { updateScreenMode() }
                             .create()
 
                     d1.show()
@@ -384,11 +381,12 @@ class Main : AppCompatActivity(), CoroutineScope {
         if (!viewingFavorites) {
             swipeContainer.isEnabled = true
             swipeContainer.setOnRefreshListener {
+                recreate()
                 // Implement refresh adapter code
-                finish()
-                overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-                restartMain(viewingFavorites)
-                overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+//                finish()
+//                overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+//                restartMain(viewingFavorites)
+//                overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
             }
 
             swipeContainer.setColorSchemeResources(android.R.color.holo_red_light)
@@ -419,6 +417,11 @@ class Main : AppCompatActivity(), CoroutineScope {
         calcScreenSize()
         val builder = StrictMode.VmPolicy.Builder()
         StrictMode.setVmPolicy(builder.build())
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateScreenMode()
     }
 
     fun initializeAdapter() {
@@ -477,6 +480,10 @@ class Main : AppCompatActivity(), CoroutineScope {
         super.onPause()
     }
 
+    override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
+        super.onSaveInstanceState(outState, outPersistentState)
+    }
+
     override fun onDestroy() {
         if (dialog != null)
             dialog!!.dismiss()
@@ -501,25 +508,35 @@ class Main : AppCompatActivity(), CoroutineScope {
         screenHeight = outPoint.y
         screenWidth = outPoint.x
 
-
         if (resourceId > 0)
             screenHeight -= res.getDimensionPixelSize(resourceId)
     }
 
-    fun nonFullscreen() {
-        window.decorView.systemUiVisibility = 0
+    fun updateScreenMode() {
+        if (fullscreen) {
+            immersiveFullscreen()
+        } else {
+            nonFullscreen()
+        }
     }
 
-    @RequiresApi(Build.VERSION_CODES.KITKAT)
+    fun nonFullscreen() {
+        window.decorView.systemUiVisibility = 0
+        toolbar.visibility = View.VISIBLE
+    }
+
     fun immersiveFullscreen() {
-        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        window.decorView.systemUiVisibility = (
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                 or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_IMMERSIVE)
-        window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+                )
+        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+        }
+        toolbar.visibility = View.GONE
     }
 
     private fun setOnClickListener() {
@@ -529,7 +546,7 @@ class Main : AppCompatActivity(), CoroutineScope {
             val selected = datas[position]
             val zoomImageView = InteractiveImageView(this@Main)
             isExpanded = false
-            progressDialog = ProgressDialog.show(this@Main, getString(R.string.downloading), "...", true)
+            progressDialog = ProgressDialog.show(this@Main, getString(R.string.downloading), "…", true)
 
             object : Thread() {
                 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
@@ -629,7 +646,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                                         .setMessage(R.string.set_wallpaper_prompt)
                                         .setIcon(getDrawable(R.drawable.ic_wallpaper_white_48dp))
                                         .setPositiveButton(android.R.string.yes) { _, _ ->
-                                            progressDialog = ProgressDialog.show(this@Main, getString(R.string.setting_wallpaper), "...", true)
+                                            progressDialog = ProgressDialog.show(this@Main, getString(R.string.setting_wallpaper), "…", true)
 
                                             object : Thread() {
                                                 override fun run() {
@@ -858,9 +875,11 @@ class Main : AppCompatActivity(), CoroutineScope {
         val nsfwToggle = (navigationView.findViewById<View>(R.id.nsfw_toggle) as? RelativeLayout)?.getChildAt(0) as? SwitchCompat
         val fullScreenToggle = (navigationView.findViewById<View>(R.id.fullscreen_toggle) as? RelativeLayout)?.getChildAt(0) as? SwitchCompat
         val titlesToggle = (navigationView.findViewById<View>(R.id.title_toggle) as? RelativeLayout)?.getChildAt(0) as? SwitchCompat
+        val darkModeToggle = (navigationView.findViewById<View>(R.id.darkmode_toggle) as? RelativeLayout)?.getChildAt(0) as? SwitchCompat
         nsfwToggle?.isChecked = prefs.getBoolean("SHOW_NSFW", false)
         fullScreenToggle?.isChecked = prefs.getBoolean("FULLSCREEN", false)
         titlesToggle?.isChecked = prefs.getBoolean("SHOW_TITLES", true)
+        darkModeToggle?.isChecked = prefs.getBoolean("DARK_MODE", false)
 
         nsfwToggle?.setOnClickListener {
             val showing = prefs.getBoolean("SHOW_NSFW", false)
@@ -883,6 +902,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                         .setIcon(R.drawable.ic_launcher)
                         .setMessage(R.string.show_nsfw_confirmation)
                         .setOnDismissListener {
+                            updateScreenMode()
                             nsfwToggle.isChecked = prefs.getBoolean("SHOW_NSFW", false)
                         }
                         .create()
@@ -901,21 +921,34 @@ class Main : AppCompatActivity(), CoroutineScope {
         fullScreenToggle?.setOnClickListener {
             prefsEditor.putBoolean("FULLSCREEN", !prefs.getBoolean("FULLSCREEN", false))
             prefsEditor.apply()
+            recreate()
 
-            finish()
-            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-            restartMain(viewingFavorites)
-            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+//            finish()
+//            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+//            restartMain(viewingFavorites)
+//            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
         }
 
         titlesToggle?.setOnClickListener {
             prefsEditor.putBoolean("SHOW_TITLES", !prefs.getBoolean("SHOW_TITLES", true))
             prefsEditor.apply()
+            recreate()
 
-            finish()
-            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
-            restartMain(viewingFavorites)
-            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+//            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+//            restartMain(viewingFavorites)
+//            overridePendingTransition(R.transition.fade_in, R.transition.fade_out)
+        }
+
+        darkModeToggle?.setOnClickListener {
+            val enabled = prefs.getBoolean("DARK_MODE", false)
+            prefsEditor.putBoolean("DARK_MODE", !enabled)
+            prefsEditor.apply()
+            recreate()
+
+//            AppCompatDelegate.setDefaultNightMode(when (!enabled) {
+//                true -> MODE_NIGHT_YES
+//                false -> MODE_NIGHT_NO
+//            })
         }
         return true
     }

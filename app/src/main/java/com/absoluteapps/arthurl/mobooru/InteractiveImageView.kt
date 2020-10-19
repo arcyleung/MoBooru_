@@ -180,7 +180,7 @@ class InteractiveImageView : androidx.appcompat.widget.AppCompatImageView {
             val bmWidth = drawable.intrinsicWidth
             val bmHeight = drawable.intrinsicHeight
 
-            Log.d("bmSize", "bmWidth: $bmWidth bmHeight : $bmHeight")
+//            Log.d("bmSize", "bmWidth: $bmWidth bmHeight : $bmHeight")
 
             val scaleX = viewWidth.toFloat() / bmWidth.toFloat()
             val scaleY = viewHeight.toFloat() / bmHeight.toFloat()

@@ -14,7 +14,6 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorPrimary"
-        android:popupTheme="@style/AppTheme"
         android:minHeight="?attr/actionBarSize"
         tools:targetApi="lollipop">
 
@@ -36,8 +35,6 @@
                 android:importantForAutofill="no"
                 android:inputType="text"
                 android:singleLine="true"
-                android:textColor="#ffffff"
-                android:textColorHint="#aaaaaa"
                 android:textCursorDrawable="@null"></EditText>
 
             <ImageButton

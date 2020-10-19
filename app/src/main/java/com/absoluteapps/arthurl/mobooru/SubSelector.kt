@@ -38,6 +38,7 @@ class SubSelector : AppCompatActivity() {
     internal lateinit var selectedSubs: HashSet<Int>
     internal lateinit var selectedCustomSubs: HashSet<Int>
     internal var showNsfw: Boolean = false
+    internal var darkmode: Boolean = false
     internal var adp: CustomAdapter? = null
     internal var gson = Gson()
     private lateinit var mInfo: ImageButton
@@ -56,12 +57,20 @@ class SubSelector : AppCompatActivity() {
     private lateinit var prefs: SharedPreferences
     internal lateinit var prefsEditor: SharedPreferences.Editor
     internal var intSubMap = object : TypeToken<Map<Int, Sub>>() {
-
     }.type
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Checked favorite subs <sub_id, checked>
+        prefs = PreferenceManager.getDefaultSharedPreferences(baseContext)
+        prefsEditor = prefs.edit()
+
+        // Dark mode
+        darkmode = prefs.getBoolean("DARK_MODE", false)
+        setTheme(if (darkmode) R.style.AppThemeDark else R.style.AppThemeLight)
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings_subs)
+
         mEditText = findViewById<View>(R.id.search) as EditText
         mTabLayout = findViewById<View>(R.id.tabLayout) as TabLayout
         mAddCustomSub = findViewById<View>(R.id.addCustomSub) as ImageButton
@@ -93,7 +102,7 @@ class SubSelector : AppCompatActivity() {
 
         // Info button
         mInfo.setOnClickListener {
-            val d1 = AlertDialog.Builder(ContextThemeWrapper(this@SubSelector, R.style.AppTheme))
+            val d1 = AlertDialog.Builder(ContextThemeWrapper(this@SubSelector, if (darkmode) R.style.AppThemeDark else R.style.AppThemeLight))
                     .setTitle(R.string.tips)
                     .setNeutralButton(R.string.reset) { _, _ ->
                         // Reset selection to default
@@ -120,7 +129,7 @@ class SubSelector : AppCompatActivity() {
         // Add Custom sub button
         mAddCustomSub.setOnClickListener {
             val imm = this@SubSelector.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
-            val dialogBuilder = AlertDialog.Builder(ContextThemeWrapper(this@SubSelector, R.style.AppTheme))
+            val dialogBuilder = AlertDialog.Builder(ContextThemeWrapper(this@SubSelector, if (darkmode) R.style.AppThemeDark else R.style.AppThemeLight))
             val inflater = LayoutInflater.from(this@SubSelector)
             val dialogView = inflater.inflate(R.layout.add_custom_sub, null)
             dialogBuilder.setView(dialogView)
@@ -129,7 +138,7 @@ class SubSelector : AppCompatActivity() {
             dialogBuilder.setTitle(R.string.add_subreddit)
             dialogBuilder.setMessage(R.string.add_subreddit_desc)
             dialogBuilder.setPositiveButton(R.string.done) { _, _ ->
-                progressDialog = ProgressDialog.show(this@SubSelector, getString(R.string.add_subreddit), "...", true)
+                progressDialog = ProgressDialog.show(this@SubSelector, getString(R.string.add_subreddit), "…", true)
                 val inputs = edt.text.toString().split("\n")
 
                 // Reset counters
@@ -162,9 +171,6 @@ class SubSelector : AppCompatActivity() {
         origList.addAll(customSubsMap.values)
         origList.sort()
 
-        // Checked favorite subs <sub_id, checked>
-        prefs = PreferenceManager.getDefaultSharedPreferences(baseContext)
-        prefsEditor = prefs.edit()
         try {
             selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[1]"), hashSetMap)
             selectedCustomSubs = gson.fromJson(prefs.getString("SELECTED_CUSTOM_SUBS", "[]"), hashSetMap)
@@ -335,7 +341,7 @@ class SubSelector : AppCompatActivity() {
             val sub = parent.getItemAtPosition(position) as Sub
             val d1: AlertDialog
             if (sub.isCustom) {
-                d1 = AlertDialog.Builder(ContextThemeWrapper(this@SubSelector, R.style.AppTheme))
+                d1 = AlertDialog.Builder(ContextThemeWrapper(this@SubSelector, if (darkmode) R.style.AppThemeDark else R.style.AppThemeLight))
                         .setTitle(getString(R.string.about) + " " + sub.subName + ":")
                         .setNegativeButton(R.string.back) { _, _ ->
                             // Do nothing
@@ -363,7 +369,7 @@ class SubSelector : AppCompatActivity() {
                         .setMessage(if (sub.desc.isNotEmpty()) sub.desc else getString(R.string.no_description))
                         .create()
             } else {
-                d1 = AlertDialog.Builder(ContextThemeWrapper(this@SubSelector, R.style.AppTheme))
+                d1 = AlertDialog.Builder(ContextThemeWrapper(this@SubSelector, if (darkmode) R.style.AppThemeDark else R.style.AppThemeLight))
                         .setTitle(getString(R.string.about) + " " + sub.subName + ":")
                         .setNegativeButton(R.string.back) { _, _ ->
                             // Do nothing

@@ -46,10 +46,10 @@ class DataAdapter(internal var activity: Activity, internal var resource: Int, i
 
         val data = datas[position]
 
-        holder.title!!.text = if (data.title.length > 35) data.title.substring(0, 30) + "..." else data.title
+        holder.title!!.text = if (data.title.length > 35) data.title.substring(0, 30) + "…" else data.title
         holder.score!!.text = data.score
         holder.score!!.setTypeface(null, Typeface.BOLD_ITALIC)
-        holder.description!!.text = if (data.series.length > 30) data.series.substring(0, 25) + "..." else data.series
+        holder.description!!.text = if (data.series.length > 30) data.series.substring(0, 25) + "…" else data.series
 
         if (data.thumbImgUrl !== "") {
             val r = if (data.rat < 1) 1 / data.rat else data.rat

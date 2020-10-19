@@ -1,16 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="colorPrimaryDark">#434343</item>
-        <item name="colorPrimary">#434343</item>
-        <item name="colorAccent">#ff0066</item>
+    <style name="AppThemeLight" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimaryDark">#FFFFFF</item>
+        <item name="colorPrimary">#303030</item>
+        <item name="colorAccent">#FF0066</item>
         <item name="colorControlNormal">#ff0066</item>
-        <item name="colorControlActivated">#ff0066</item>
-        <item name="colorControlHighlight">#ff0066</item>
-        <item name="colorButtonNormal">#434343</item>
-        <item name="colorSwitchThumbNormal">#434343</item>
-        <item name="android:statusBarColor">#434343</item>
-        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="colorControlActivated">#FF0066</item>
+        <item name="colorControlHighlight">#FF0066</item>
+        <item name="colorButtonNormal">#303030</item>
+        <item name="colorSwitchThumbNormal">#303030</item>
+        <item name="android:textColorHint">#FFFFFF</item>
+        <item name="android:statusBarColor">#303030</item>
+        <item name="android:windowAnimationStyle">@style/WindowAnimationTransition</item>
     </style>
+
+    <style name="AppThemeDark" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorPrimaryDark">#FFFFFF</item>
+        <item name="colorPrimary">#303030</item>
+        <item name="colorAccent">#FF0066</item>
+        <item name="colorControlNormal">#ff0066</item>
+        <item name="colorControlActivated">#FF0066</item>
+        <item name="colorControlHighlight">#FF0066</item>
+        <item name="colorButtonNormal">#303030</item>
+        <item name="colorSwitchThumbNormal">#303030</item>
+        <item name="android:textColorHint">#FFFFFF</item>
+        <item name="android:statusBarColor">#303030</item>
+        <item name="android:windowAnimationStyle">@style/WindowAnimationTransition</item>
+    </style>
+
+    <style name="WindowAnimationTransition">
+        <item name="android:windowEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:windowExitAnimation">@android:anim/fade_out</item>
+    </style>
+
 </resources>

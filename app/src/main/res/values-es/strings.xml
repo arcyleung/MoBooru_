@@ -69,11 +69,11 @@
 
     <string name="help_button_text">Marque los subreddits de los que le gustaría ver imágenes; mantenga presionado cada subreddit para ver su descripción\n\nTenga en cuenta que los subreddits y el contenido de NSFW están ocultos de forma predeterminada, cambie la configuración de la barra lateral si desea verlos.</string>
     <string name="add_subreddit">Agregar subreddit</string>
-    <string name="updating_index">Actualizando el índice subreddit ...</string>
+    <string name="updating_index">Actualizando el índice subreddit…</string>
     <string name="no_internet_help">Conéctese al servicio celular o Wi-Fi e intente nuevamente más tarde</string>
 
     <string name="no_internet">No hay conexion de red</string>
-    <string name="indexing_wait">Espere hasta que termine la indexación ...</string>
+    <string name="indexing_wait">Espere hasta que termine la indexación…</string>
     <string name="number_of_columns">Número de columnas</string>
     <string name="default_portrait">Retrato predeterminado: %1$d</string>
     <string name="default_landscape">Paisaje predeterminado: %1$d</string>
@@ -83,4 +83,5 @@
     <string name="columns">Columnas</string>
     <string name="back_to_selected_subs">Volver a seleccionado</string>
     <string name="help">Ayuda</string>
+    <string name="darkmode">Modo Oscuro</string>
 </resources>
