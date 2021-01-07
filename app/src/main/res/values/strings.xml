@@ -3,21 +3,86 @@
 
     <string name="app_name">MoBooru</string>
     <string name="action_settings_subs">Subreddits</string>
-    <string name="action_about">About</string>
     <string name="title_activity_settings_subs">Subreddit selection</string>
     <string name="defaultsub">1</string>
-    <string name="title_activity_side_drawer">SideDrawer</string>
-
-    <string name="title_section1">Section 1</string>
-    <string name="title_section2">Section 2</string>
-    <string name="title_section3">Section 3</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
-    <string name="action_example">Example action</string>
+    <string name="yes">Yes</string>
+    <string name="done">Done</string>
+    <string name="cancel">Cancel</string>
+    <string name="back">Back</string>
+    <string name="delete">Delete</string>
+    <string name="quit">Quit</string>
+    <string name="tips">Tips</string>
+    <string name="reset">Reset</string>
 
-    <string name="action_settings">Settings</string>
     <string name="title_activity_help">Help</string>
+    <string name="help_1">Access the menu by tapping the top left icon or swiping from the left edge</string>
+    <string name="help_2">Select content from subreddits you wish to view</string>
+    <string name="help_3">Have fun!</string>
+    <string name="search_subreddits">Search subreddits</string>
+    <string name="add_subreddit_desc">\nAdd subreddits here!\nYou can add multiple at once separated with new lines</string>
+    <string name="add_sub_hint">Enter subreddit e.g. r/animenocontext</string>
+    <string name="all_tab">All</string>
+    <string name="selected_tab">Selected</string>
+    <string name="noData">Ain\'t nobody here but us chickens!\n Please select another subreddit</string>
+    <string name="about">About</string>
+    <string name="removed">Removed</string>
+    <string name="no_description">No description</string>
+    <string name="subreddits">Subreddits</string>
+    <string name="nsfw">NSFW</string>
+    <string name="favorites">Favorites</string>
+    <string name="no_favorites">You have not added any favorites yet. To add a favorite, press the heart button when viewing an image!</string>
+    <string name="downloading">Downloading</string>
+    <string name="confirm">Confirm</string>
+    <string name="set_wallpaper_prompt">Do you want to set this as your wallpaper?</string>
+    <string name="setting_wallpaper">Setting Wallpaper</string>
+    <string name="setting_wallpaper_success">Wallpaper set!</string>
+    <string name="setting_wallpaper_fail">Failed to set wallpaper!</string>
+    <string name="share">Share</string>
+    <string name="already_favorited">Already in favorites!</string>
+    <string name="favorited">Added to favorites!</string>
+    <string name="unfavorited">Removed from favorites!</string>
+    <string name="show_nsfw_prompt">Show NSFW?</string>
 
+    <string name="show_nsfw_confirmation">This will also show content marked as NSFW from Reddit posts, are you sure?</string>
+    <string name="share_link">Share link</string>
+    <string name="share_image">Share image</string>
+    <string name="share_failed_permissions">Failed to share image, please check storage permissions</string>
+    <string name="no_permission_share">Permission to save images was not granted</string>
+    <string name="no_permission_share_save">Permission to share/ save images was not granted</string>
+    <string name="help_prompt">Would you like to view the help guide?</string>
+    <string name="indexing_complete">Indexing completed</string>
+    <string name="error_loading_image">Error loading image</string>
+    <string name="error_loading_image_size">Error loading image: image too large</string>
+
+    <string-array name="share_options">
+        <item>Share image</item>
+        <item>Share image link</item>
+        <item>Share Reddit link</item>
+    </string-array>
+
+    <string name="save_gallery_success">Saved image %1$s to gallery</string>
+    <string name="save_gallery_fail">Failed to save image %1$s to gallery</string>
+
+
+    <string name="help_button_text">Check the subreddits you\'d like to see pictures from; press and hold each subreddit to see its description!\n\nNote that NSFW subreddits and content are hidden by default, toggle the setting from the side bar if you wish to see them.</string>
+    <string name="add_subreddit">Add subreddit</string>
+    <string name="updating_index">Updating subreddit index…</string>
+    <string name="no_internet_help">Sorry, please connect to Wi-Fi or cellular service and try again later!</string>
+
+    <string name="no_internet">No network connection</string>
+    <string name="indexing_wait">Please wait until indexing finishes…</string>
+    <string name="number_of_columns">Number of columns</string>
+    <string name="default_portrait">"Default portrait: %1$d"</string>
+    <string name="default_landscape">"Default landscape: %1$d"</string>
+    <string name="show_nsfw">Show NSFW</string>
+    <string name="fullscreen">Fullscreen</string>
+    <string name="show_titles">Show Titles</string>
+    <string name="columns">Columns</string>
+    <string name="back_to_selected_subs">Back to selected subs</string>
+    <string name="help">Help</string>
+    <string name="darkmode">Dark Mode</string>
 </resources>

@@ -21,21 +21,21 @@
         android:paddingTop="4dp"
         android:paddingLeft="8dp"
         android:paddingRight="8dp"
-        android:textSize="18sp"/>
+        android:textSize="15sp"/>
     <LinearLayout
-        android:id="@+id/metadata"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:orientation="horizontal"
         android:layout_weight="1"
         android:gravity="center" >
 
         <TextView
             android:id="@+id/description"
-            android:layout_weight=".75"
+            android:textSize="12sp"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:gravity="left"
+            android:layout_weight=".75"
+            android:gravity="start"
             android:paddingLeft="8dp"
             android:paddingTop="2dp"
             android:paddingRight="0dp"
@@ -43,19 +43,16 @@
 
         <TextView
             android:id="@+id/score"
-            android:layout_weight=".25"
+            android:textSize="12sp"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:gravity="right"
-            android:paddingBottom="8dp"
+            android:layout_weight=".25"
+            android:gravity="end"
             android:paddingLeft="0dp"
+            android:paddingTop="2dp"
             android:paddingRight="0dp"
-            android:paddingTop="2dp" />
+            android:paddingBottom="8dp" />
 
     </LinearLayout>
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:background="#ccc" />
 </LinearLayout>
