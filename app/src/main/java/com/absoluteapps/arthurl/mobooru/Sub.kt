@@ -15,16 +15,14 @@ open class Sub : Serializable, Comparable<Sub> {
     }
 
     var subName = ""
-    var subID = 0
     var subscriberCount = 0
     var selected = false
     var isNSFW = false
     var isCustom = false
     var desc = ""
 
-    constructor(subName: String, subID: Int, subscriberCount: Int, selected: Boolean, isNSFW: Boolean, isCustom: Boolean, desc: String) {
+    constructor(subName: String, subscriberCount: Int, selected: Boolean, isNSFW: Boolean, isCustom: Boolean, desc: String) {
         this.subName = subName
-        this.subID = subID
         this.subscriberCount = subscriberCount
         this.selected = selected
         this.isNSFW = isNSFW
@@ -32,14 +30,12 @@ open class Sub : Serializable, Comparable<Sub> {
         this.desc = desc
     }
 
-    constructor(subName: String, id: Int) {
+    constructor(subName: String) {
         this.subName = subName.toLowerCase()
-        this.subID = id
     }
 
-    constructor(subName: String, id: Int, subscriberCount: Int) {
+    constructor(subName: String, subscriberCount: Int) {
         this.subName = subName.toLowerCase()
-        this.subID = id
         this.subscriberCount = subscriberCount
     }
 

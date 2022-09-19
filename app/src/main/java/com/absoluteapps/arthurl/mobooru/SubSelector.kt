@@ -33,10 +33,10 @@ class SubSelector : AppCompatActivity() {
     internal lateinit var subsList: ArrayList<Sub>
     internal var allShownSubsCount: Int = 0
     internal var selectedShownSubsCount: Int = 0
-    private lateinit var subsMap: HashMap<Int, Sub>
-    internal lateinit var customSubsMap: HashMap<Int, Sub>
-    internal lateinit var selectedSubs: HashSet<Int>
-    internal lateinit var selectedCustomSubs: HashSet<Int>
+    private lateinit var subsMap: HashMap<String, Sub>
+    internal lateinit var customSubsMap: HashMap<String, Sub>
+    internal lateinit var selectedSubs: HashSet<String>
+    internal lateinit var selectedCustomSubs: HashSet<String>
     internal var showNsfw: Boolean = false
     internal var darkmode: Boolean = false
     internal var adp: CustomAdapter? = null
@@ -49,14 +49,14 @@ class SubSelector : AppCompatActivity() {
     private lateinit var addFailed: ArrayList<String>
     private var addCount: Int = 0
     private lateinit var mTabLayout: TabLayout
-    internal var hashSetMap = object : TypeToken<HashSet<Int>>() {
+    internal var hashSetMap = object : TypeToken<HashSet<String>>() {
 
     }.type
     internal lateinit var progressDialog: ProgressDialog
     private lateinit var addCustomSubTask: AddCustomSub
     private lateinit var prefs: SharedPreferences
     internal lateinit var prefsEditor: SharedPreferences.Editor
-    internal var intSubMap = object : TypeToken<Map<Int, Sub>>() {
+    internal var intSubMap = object : TypeToken<Map<String, Sub>>() {
     }.type
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -107,9 +107,9 @@ class SubSelector : AppCompatActivity() {
                     .setNeutralButton(R.string.reset) { _, _ ->
                         // Reset selection to default
                         selectedSubs = HashSet()
-                        selectedSubs.add(1)
+                        selectedSubs.add("awwnime")
                         selectedCustomSubs = HashSet()
-                        prefsEditor.putString("SELECTED_SUBS", "[1]")
+                        prefsEditor.putString("SELECTED_SUBS", "['awwnime']")
                         prefsEditor.putString("SELECTED_CUSTOM_SUBS", "[]")
                         prefsEditor.apply()
                         finish()
@@ -163,8 +163,8 @@ class SubSelector : AppCompatActivity() {
         }
 
         // List of subs
-        subsMap = intent.getSerializableExtra("subsMap") as HashMap<Int, Sub>
-        customSubsMap = intent.getSerializableExtra("customSubsMap") as HashMap<Int, Sub>
+        subsMap = intent.getSerializableExtra("subsMap") as HashMap<String, Sub>
+        customSubsMap = intent.getSerializableExtra("customSubsMap") as HashMap<String, Sub>
 
         // Delete NSFW default subs
         origList.addAll(subsMap.values.filter { s -> !s.isNSFW })
@@ -172,7 +172,7 @@ class SubSelector : AppCompatActivity() {
         origList.sort()
 
         try {
-            selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[1]"), hashSetMap)
+            selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "['awwnime']"), hashSetMap)
             selectedCustomSubs = gson.fromJson(prefs.getString("SELECTED_CUSTOM_SUBS", "[]"), hashSetMap)
             showNsfw = prefs.getBoolean("SHOW_NSFW", false)
             for (id in selectedSubs) {
@@ -194,7 +194,7 @@ class SubSelector : AppCompatActivity() {
             // Set selectedString sub to awwnime only
             selectedSubs = HashSet()
             selectedCustomSubs = HashSet()
-            selectedSubs.add(1)
+            selectedSubs.add("awwnime")
         }
 
         subsList = ArrayList(subsMap.values.filter{ s -> !s.isNSFW})
@@ -308,13 +308,13 @@ class SubSelector : AppCompatActivity() {
             val viewSub = parent.getItemAtPosition(position) as Sub
             val cb = view.findViewById<View>(R.id.checkBox) as CheckBox
 
-            val isSelected = selectedSubs.contains(viewSub.subID) || selectedCustomSubs.contains(viewSub.subID)
+            val isSelected = selectedSubs.contains(viewSub.subName) || selectedCustomSubs.contains(viewSub.subName)
             if (isSelected) {
                 selectedShownSubsCount--
                 if (viewSub.isCustom) {
-                    selectedCustomSubs.remove(viewSub.subID)
+                    selectedCustomSubs.remove(viewSub.subName)
                 } else {
-                    selectedSubs.remove(viewSub.subID)
+                    selectedSubs.remove(viewSub.subName)
                 }
 
                 // If we are showing only selected subs, update the ListView adapter data
@@ -326,9 +326,9 @@ class SubSelector : AppCompatActivity() {
             } else {
                 selectedShownSubsCount++
                 if (viewSub.isCustom) {
-                    selectedCustomSubs.add(viewSub.subID)
+                    selectedCustomSubs.add(viewSub.subName)
                 } else {
-                    selectedSubs.add(viewSub.subID)
+                    selectedSubs.add(viewSub.subName)
                 }
             }
             updateTabs()
@@ -347,11 +347,11 @@ class SubSelector : AppCompatActivity() {
                             // Do nothing
                         }
                         .setNeutralButton(R.string.delete) { _, _ ->
-                            customSubsMap.remove(sub.subID)
+                            customSubsMap.remove(sub.subName)
                             val serial = gson.toJson(customSubsMap, intSubMap)
                             prefsEditor.putString("CUSTOM_SUBS", serial)
 
-                            selectedCustomSubs.remove(sub.subID)
+                            selectedCustomSubs.remove(sub.subName)
                             prefsEditor.putString("SELECTED_CUSTOM_SUBS", gson.toJson(selectedCustomSubs, hashSetMap))
 
                             prefsEditor.apply()
@@ -433,7 +433,7 @@ class SubSelector : AppCompatActivity() {
             val sb = subsList[position]
 
             holder.name!!.text = sb.subName
-            holder.name!!.isChecked = !sb.isCustom && selectedSubs.contains(sb.subID) || sb.isCustom && selectedCustomSubs.contains(sb.subID)
+            holder.name!!.isChecked = !sb.isCustom && selectedSubs.contains(sb.subName) || sb.isCustom && selectedCustomSubs.contains(sb.subName)
             holder.name!!.tag = sb
             holder.isNSFW!!.text = if (sb.isNSFW) getString(R.string.nsfw) else ""
             holder.subscribers!!.text = Formatter.shortHandFormatter(sb.subscriberCount)
@@ -460,7 +460,7 @@ class SubSelector : AppCompatActivity() {
 
             // Only selected
             allShownSubsCount = tmp.size
-            selected = tmp.filter { s -> selectedSubs.contains(s.subID) || selectedCustomSubs.contains(s.subID) } as ArrayList<Sub>
+            selected = tmp.filter { s -> selectedSubs.contains(s.subName) || selectedCustomSubs.contains(s.subName) } as ArrayList<Sub>
             selectedShownSubsCount = selected.size
 
             // Only show selected subs
@@ -508,7 +508,7 @@ class SubSelector : AppCompatActivity() {
             var info: String
             val obj: JSONObject
             try {
-                val aboutURL = "https://www.reddit.com/$customSubName/about.json"
+                val aboutURL = "https://www.reddit.com/r/$customSubName/about.json"
                 val url = URL(aboutURL)
                 val scan = Scanner(url.openStream())
                 info = ""
@@ -520,18 +520,16 @@ class SubSelector : AppCompatActivity() {
                     // Invalid or empty subreddit
                     return -3
                 } else {
-                    val customSubID = customSubsMap.size + 10000
                     val newSub = Sub(
                             customSubName,
-                            customSubID,
                             obj.getInt("subscribers"),
                             false,
                             obj.getBoolean("over18"),
                             true,
                             obj.getString("public_description")
                     )
-                    customSubsMap[customSubsMap.size + 10000] = newSub
-                    selectedCustomSubs.add(customSubID)
+                    customSubsMap[customSubName] = newSub
+                    selectedCustomSubs.add(customSubName)
                     origList.add(newSub)
                     subsList.add(newSub)
 

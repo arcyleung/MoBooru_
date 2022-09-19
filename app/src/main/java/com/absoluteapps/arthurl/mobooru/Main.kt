@@ -45,9 +45,6 @@ import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.*
 import org.json.JSONArray
 import org.json.JSONObject
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import org.jsoup.select.Elements
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -67,7 +64,6 @@ class Main : AppCompatActivity(), CoroutineScope {
     private var thumbnailSize = 300
     private var pageSize = 30
     internal var currentPage = 1
-    internal var mainsite = "https://redditbooru.com"
     internal lateinit var url: URL
     internal lateinit var display: Display
     internal var screenWidth = 0
@@ -77,16 +73,10 @@ class Main : AppCompatActivity(), CoroutineScope {
     internal var displayMetrics = DisplayMetrics()
 
     // Site config
-    internal var selectedString = ""
     private var showNsfw: Boolean = false
     private var showTitles: Boolean = false
     private var fullscreen: Boolean = false
     private var darkmode: Boolean = false
-    internal var selectedURL = "https://redditbooru.com/images/?sources=$selectedString&afterDate="
-    internal lateinit var doc: Document
-    internal lateinit var redditSubs: Elements
-    internal var subsJSON = ""
-    internal lateinit var arr: JSONArray
     internal var datas = ArrayList<Data>()
     internal var favorites = ArrayList<Data>()
     private lateinit var lm: LoadMorePhotos
@@ -115,16 +105,16 @@ class Main : AppCompatActivity(), CoroutineScope {
     private lateinit var swipeContainer: SwipeRefreshLayout
 
     // Sharedprefs, serialization, storage
-    internal var subsMap = HashMap<Int, Sub>()
-    internal var customSubsMap = HashMap<Int, Sub>()
-    internal var selectedSubs = HashSet<Int>()
-    internal var selectedCustomSubs = HashSet<Int>()
-    internal var nextPages = HashMap<Int, String>()
+    internal lateinit var subsMap: HashMap<String, Sub>
+    internal lateinit var customSubsMap: HashMap<String, Sub>
+    internal var selectedSubs = HashSet<String>()
+    internal var selectedCustomSubs = HashSet<String>()
+    internal var nextPages = HashMap<String, String>()
     internal var lastIndexTime: Long = 0
     internal var timeToUpdate = false
     internal var gson = Gson()
-    internal var intSubMap = object : TypeToken<Map<Int, Sub>>() {}.type
-    private var intSet = object : TypeToken<Set<Int>>() {}.type
+    internal var intSubMap = object : TypeToken<HashMap<String, Sub>>() {}.type
+    private var intSet = object : TypeToken<HashSet<String>>() {}.type
     internal var dataList = object : TypeToken<ArrayList<Data>>() {}.type
     internal lateinit var prefs: SharedPreferences
     internal lateinit var prefsEditor: SharedPreferences.Editor
@@ -151,9 +141,9 @@ class Main : AppCompatActivity(), CoroutineScope {
             prefs = PreferenceManager.getDefaultSharedPreferences(baseContext)
             prefsEditor = prefs.edit()
             // Get saved subs
-            subsMap = gson.fromJson(prefs.getString("SUBS", "{1: {subName: 'Awwnime', subID: 1, subscriberCount: 0, selected: false, isNSFW: false, desc: '', isCustom: false}}"), intSubMap)
+            subsMap = gson.fromJson(prefs.getString("SUBS", "{'awwnime': {subName: 'awwnime', subscriberCount: 0, selected: false, isNSFW: false, desc: '', isCustom: false}}"), intSubMap)
             customSubsMap = gson.fromJson(prefs.getString("CUSTOM_SUBS", "{}"), intSubMap)
-            selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "[1]"), intSet)
+            selectedSubs = gson.fromJson(prefs.getString("SELECTED_SUBS", "['awwnime']"), intSet)
             selectedCustomSubs = gson.fromJson(prefs.getString("SELECTED_CUSTOM_SUBS", "[]"), intSet)
             favorites = gson.fromJson(prefs.getString("FAVORITES", "[]"), dataList)
             showNsfw = prefs.getBoolean("SHOW_NSFW", false)
@@ -183,16 +173,16 @@ class Main : AppCompatActivity(), CoroutineScope {
             }
 
             // Time to reindex subs
-            if (!prefs.contains("UPDATE_TIME") || System.currentTimeMillis() - prefs.getLong("UPDATE_TIME", 0) > 604800000) {
-                timeToUpdate = true
-            }
+//            if (!prefs.contains("UPDATE_TIME") || System.currentTimeMillis() - prefs.getLong("UPDATE_TIME", 0) > 604800000) {
+//                timeToUpdate = true
+//            }
 
             // Dark mode
             setTheme(if (prefs.getBoolean("DARK_MODE", false)) R.style.AppThemeDark else R.style.AppThemeLight)
 
         } catch (ex: Exception) {
             ex.printStackTrace()
-            timeToUpdate = true
+//            timeToUpdate = true
         }
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -235,7 +225,7 @@ class Main : AppCompatActivity(), CoroutineScope {
         supportActionBar!!.setDisplayShowHomeEnabled(true)
 
         viewingFavorites = if (intent.getSerializableExtra("viewingFavorites") == null) false else intent.getSerializableExtra("viewingFavorites") as Boolean
-        setFavoriteSubs()
+//        setFavoriteSubs()
 
         navigationView.setBackgroundColor(if (darkmode) Color.parseColor("#434343") else Color.parseColor("#FFFFFF"))
         navigationView.setNavigationItemSelectedListener(NavigationView.OnNavigationItemSelectedListener { item ->
@@ -359,8 +349,6 @@ class Main : AppCompatActivity(), CoroutineScope {
         })
 
         display = windowManager.defaultDisplay
-
-        selectedURL = "https://redditbooru.com/images/?sources=$selectedString"
 
         if (!isNetworkAvailable) {
             val d = AlertDialog.Builder(this@Main)
@@ -663,6 +651,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                                                         }
 
                                                     } catch (e: Exception) {
+                                                        e.printStackTrace()
                                                         progressDialog!!.dismiss()
                                                         this@Main.runOnUiThread {
                                                             Toast.makeText(applicationContext,
@@ -788,7 +777,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                             progressDialog!!.dismiss()
                         }
                     } catch (ex: Exception) {
-
+                        ex.printStackTrace()
                     }
                 }
             }.start()
@@ -840,12 +829,12 @@ class Main : AppCompatActivity(), CoroutineScope {
 
     // Rebuild index with new sub metadata
     //
-    private fun setFavoriteSubs() {
-        selectedString = ""
-        for (i in selectedSubs) {
-            selectedString += "$i%2C"
-        }
-    }
+//    private fun setFavoriteSubs() {
+//        selectedString = ""
+//        for (i in selectedSubs) {
+//            selectedString += "$i%2C"
+//        }
+//    }
 
     override fun onBackPressed() {
         if (viewingFavorites) {
@@ -1043,6 +1032,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                 uri = null
             }
         } catch (e: Exception) {
+            e.printStackTrace()
             Toast.makeText(applicationContext,
                     getString(R.string.save_gallery_fail, time.toString()),
                     Toast.LENGTH_LONG).show()
@@ -1139,29 +1129,10 @@ class Main : AppCompatActivity(), CoroutineScope {
     private inner class FetchSubs : AsyncTask<Void, Void, Void>() {
         override fun doInBackground(vararg params: Void): Void? {
             try {
-                // Fetch subs list
-                doc = Jsoup.connect(mainsite)
-                        .header("Accept-Encoding", "gzip, deflate")
-                        .userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0")
-                        .maxBodySize(0)
-                        .timeout(6000000)
-                        .get()
-                redditSubs = doc.select("script")
-                for ((i, sub) in redditSubs.withIndex()) {
-                    val at = sub.toString()
-                    if (i == 2) {
-                        subsJSON = at
-                    }
-                }
-
-                subsJSON = subsJSON.substring(subsJSON.indexOf("["))
-                subsJSON = subsJSON.substring(0, subsJSON.indexOf("]") + 1)
-                arr = JSONArray(subsJSON)
-
-//                if (timeToUpdate || arr.length() > subsMap.size) {
+                val presetSubs = resources.getStringArray(R.array.preset_subs)
                 if (timeToUpdate) {
-                    for (j in 0 until arr.length()) {
-                        subsMap[arr.getJSONObject(j).getInt("value")] = Sub(arr.getJSONObject(j).getString("name"), arr.getJSONObject(j).getInt("value"))
+                    for (subName in presetSubs) {
+                        subsMap[subName] = Sub(subName)
                     }
                     executeAsyncTask(UpdateIndex())
 
@@ -1181,6 +1152,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+                timeToUpdate = true
             }
 
             return null
@@ -1203,9 +1175,8 @@ class Main : AppCompatActivity(), CoroutineScope {
                         info += scan.nextLine()
                     scan.close()
                     obj = JSONObject(info).getJSONObject("data")
-                    subsMap[s.subID] = Sub(
+                    subsMap[s.subName] = Sub(
                             s.subName,
-                            s.subID,
                             obj.getInt("subscribers"),
                             s.selected,
                             obj.getBoolean("over18"),
@@ -1213,10 +1184,9 @@ class Main : AppCompatActivity(), CoroutineScope {
                             obj.getString("public_description")
                     )
                 } catch (ex: Exception) {
-                    //                ex.printStackTrace();
-                    subsMap[s.subID] = Sub(
+                    ex.printStackTrace()
+                    subsMap[s.subName] = Sub(
                             s.subName,
-                            s.subID,
                             0,
                             s.selected,
                             isNSFW = false,
@@ -1296,7 +1266,7 @@ class Main : AppCompatActivity(), CoroutineScope {
     }
 
     inner class LoadMorePhotos : AsyncTask<Void, Void, Void>() {
-        private lateinit var tmp: JSONArray
+        private var tmp = JSONArray()
         private var fetchedCustomPages = AtomicInteger(0)
 
         override fun doInBackground(vararg arg0: Void): Void? {
@@ -1315,34 +1285,17 @@ class Main : AppCompatActivity(), CoroutineScope {
                 return null
             }
 
-            // Normal subs: via Redditbooru
-            if (selectedSubs.size != 0) {
-                try {
-                    // refactor into string scanner
-                    selectedURL = "https://redditbooru.com/images/?sources=$selectedString&afterDate="
-                    url = URL(selectedURL + lastIndexTime)
+            // Merge the default and custom subs
 
-                    val scan = Scanner(url.openStream())
-                    var str = ""
-                    while (scan.hasNext())
-                        str += scan.nextLine()
-                    scan.close()
-
-                    tmp = JSONArray(str)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-
-            }
 
             // Custom subs: from Reddit directly
-            if (selectedCustomSubs.size != 0) {
+            selectedSubs.addAll(selectedCustomSubs)
                 var ix = 0
-                for (i in selectedCustomSubs) {
+                for (i in selectedSubs) {
                     launch(Dispatchers.IO) {
                         var dataJSON = JSONArray()
                         try {
-                            var jsonURL = "https://www.reddit.com/" + customSubsMap[i]!!.subName + "/.json"
+                            var jsonURL = "https://www.reddit.com/r/" + i + "/.json"
                             if (nextPages.containsKey(i)) {
                                 jsonURL += "?after=" + nextPages[i]!!
                             }
@@ -1406,7 +1359,6 @@ class Main : AppCompatActivity(), CoroutineScope {
                         fetchedCustomPages.incrementAndGet()
                     }
                 }
-            }
             return null
         }
 
