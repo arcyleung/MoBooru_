@@ -1,12 +1,5 @@
 # MoBooru
-A mobile reader for redditbooru (WIP)  
-a side project made with Android SDK
-
-+Infinite scrolling  
-+Staggered (Dynamic height) View  
-+Customizable subreddit list  
-+Hide NSFW images  
-+Click to expand image  
+A mobile reader for Reddit
   
 ToDo:  
   

@@ -468,9 +468,9 @@ class Main : AppCompatActivity(), CoroutineScope {
         super.onPause()
     }
 
-    override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
-        super.onSaveInstanceState(outState, outPersistentState)
-    }
+//    override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
+//        super.onSaveInstanceState(outState, outPersistentState)
+//    }
 
     override fun onDestroy() {
         if (dialog != null)
