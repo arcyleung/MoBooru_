@@ -85,4 +85,13 @@
     <string name="back_to_selected_subs">Back to selected subs</string>
     <string name="help">Help</string>
     <string name="darkmode">Dark Mode</string>
+    <string-array name="preset_subs">
+        <item>patchuu</item>
+        <item>twodeeart</item>
+        <item>animewallpaper</item>
+        <item>animesnowscapes</item>
+        <item>arknights</item>
+        <item>azurlane</item>
+        <item>kancolle</item>
+    </string-array>
 </resources>
