@@ -173,9 +173,9 @@ class Main : AppCompatActivity(), CoroutineScope {
             }
 
             // Time to reindex subs
-//            if (!prefs.contains("UPDATE_TIME") || System.currentTimeMillis() - prefs.getLong("UPDATE_TIME", 0) > 604800000) {
-//                timeToUpdate = true
-//            }
+            if (!prefs.contains("UPDATE_TIME") || System.currentTimeMillis() - prefs.getLong("UPDATE_TIME", 0) > 604800000) {
+                timeToUpdate = true
+            }
 
             // Dark mode
             setTheme(if (prefs.getBoolean("DARK_MODE", false)) R.style.AppThemeDark else R.style.AppThemeLight)
@@ -1130,7 +1130,6 @@ class Main : AppCompatActivity(), CoroutineScope {
         override fun doInBackground(vararg params: Void): Void? {
             try {
                 val presetSubs = resources.getStringArray(R.array.preset_subs)
-                if (timeToUpdate) {
                     for (subName in presetSubs) {
                         subsMap[subName] = Sub(subName)
                     }
@@ -1149,7 +1148,6 @@ class Main : AppCompatActivity(), CoroutineScope {
                         snackbar.show()
                         prefsEditor.putBoolean("FIRST_LAUNCH", false).commit()
                     }
-                }
             } catch (e: Exception) {
                 e.printStackTrace()
                 timeToUpdate = true
@@ -1167,7 +1165,7 @@ class Main : AppCompatActivity(), CoroutineScope {
                 var info: String
                 val obj: JSONObject
                 try {
-                    val aboutURL = "https://www.reddit.com/" + s.subName + "/about.json"
+                    val aboutURL = "https://www.reddit.com/r/" + s.subName + "/about.json"
                     val url = URL(aboutURL)
                     val scan = Scanner(url.openStream())
                     info = ""
@@ -1321,7 +1319,11 @@ class Main : AppCompatActivity(), CoroutineScope {
                                     val url = post.getString("url")
                                     val extension = url.split(".")
                                     // find better way of matching extensions
-                                    if (extension.size > 1 && (extension.last() == "png" || extension.last() == "jpg") && !post.isNull("preview")) {
+                                    if (extension.size > 1 &&
+                                        (extension.last() == "png" || extension.last() == "jpg") &&
+                                        (!post.isNull("preview") || !post.isNull("thumbnail"))
+                                    )
+                                    {
                                         val data = Data()
 
                                         // Metadata

@@ -166,8 +166,7 @@ class SubSelector : AppCompatActivity() {
         subsMap = intent.getSerializableExtra("subsMap") as HashMap<String, Sub>
         customSubsMap = intent.getSerializableExtra("customSubsMap") as HashMap<String, Sub>
 
-        // Delete NSFW default subs
-        origList.addAll(subsMap.values.filter { s -> !s.isNSFW })
+        origList.addAll(subsMap.values)
         origList.addAll(customSubsMap.values)
         origList.sort()
 
@@ -197,7 +196,7 @@ class SubSelector : AppCompatActivity() {
             selectedSubs.add("awwnime")
         }
 
-        subsList = ArrayList(subsMap.values.filter{ s -> !s.isNSFW})
+        subsList = ArrayList(subsMap.values)
         subsList.addAll(customSubsMap.values)
         subsList.sort()
         displayList()
